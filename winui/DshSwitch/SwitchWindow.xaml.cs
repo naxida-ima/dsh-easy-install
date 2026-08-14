@@ -19,7 +19,6 @@ public sealed partial class SwitchWindow : Window
     private readonly DispatcherTimer _timer;
     private bool _running;
     private bool _busy;
-    private bool _closing;
     private readonly bool _minimized;
     private readonly bool _launchWeb;
 

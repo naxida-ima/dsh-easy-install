@@ -35,7 +35,7 @@ public static class Bundle
     {
         using var fs = File.OpenRead(path);
         using var sha = SHA256.Create();
-        return Convert.ToHexStringLower(sha.ComputeHash(fs));
+        return Convert.ToHexString(sha.ComputeHash(fs)).ToLowerInvariant();
     }
 
     /// <summary>校验离线资源完整。返回问题列表（空 = 就绪）</summary>

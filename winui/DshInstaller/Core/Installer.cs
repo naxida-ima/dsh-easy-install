@@ -16,7 +16,9 @@ public static class Installer
     {
         try
         {
-            dynamic shell = Marshal.GetActiveObject("WScript.Shell");
+            Type? t = Type.GetTypeFromProgID("WScript.Shell");
+            if (t is null) return false;
+            dynamic shell = Activator.CreateInstance(t)!;
             var lnk = shell.CreateShortcut(lnkPath);
             lnk.TargetPath = target;
             lnk.WorkingDirectory = workDir;
@@ -27,28 +29,10 @@ public static class Installer
             Marshal.FinalReleaseComObject(shell);
             return true;
         }
-        catch
+        catch (Exception e)
         {
-            try
-            {
-                Type? t = Type.GetTypeFromProgID("WScript.Shell");
-                if (t is null) return false;
-                dynamic shell = Activator.CreateInstance(t)!;
-                var lnk = shell.CreateShortcut(lnkPath);
-                lnk.TargetPath = target;
-                lnk.WorkingDirectory = workDir;
-                lnk.IconLocation = $"{icon},0";
-                lnk.Description = desc;
-                lnk.Save();
-                Marshal.FinalReleaseComObject(lnk);
-                Marshal.FinalReleaseComObject(shell);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Paths.Log($"shortcut failed: {e.Message}");
-                return false;
-            }
+            Paths.Log($"shortcut failed: {e.Message}");
+            return false;
         }
     }
 
