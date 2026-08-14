@@ -57,6 +57,19 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      - name: Upload XAML compiler io (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xaml-io
+          path: |
+            winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/input.json
+            winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
+            winui/DshInstaller/obj/Release/net8.0-windows10.0.19041.0/win-x64/input.json
+            winui/DshInstaller/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Prepare offline bundles (node + dsh + checksums)
         run: |
           python scripts/prepare_bundles.py

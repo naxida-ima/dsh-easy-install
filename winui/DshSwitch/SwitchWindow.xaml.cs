@@ -221,10 +221,4 @@ public sealed partial class SwitchWindow : Window
             });
         }, TaskScheduler.FromCurrentSynchronizationContext());
     }
-
-    protected override void OnClosed(WindowEventArgs args)
-    {
-        base.OnClosed(args);
-        _timer.Stop();
-    }
 }
