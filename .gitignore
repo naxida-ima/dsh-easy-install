@@ -1,0 +1,8 @@
+# build artifacts
+dist/
+build/_bundle_work/
+build/dist/
+_assets/
+__pycache__/
+*.pyc
+.env

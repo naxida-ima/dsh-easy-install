@@ -1,0 +1,74 @@
+name: build-setup
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps
+        run: |
+          pip install --no-warn-script-location pyinstaller customtkinter pystray pillow pywin32
+        shell: pwsh
+
+      - name: Build switch.exe (PyInstaller)
+        run: |
+          pyinstaller --noconfirm --clean switch.spec
+        shell: pwsh
+
+      - name: Build install.exe (PyInstaller)
+        run: |
+          pyinstaller --noconfirm --clean installer.spec
+        shell: pwsh
+
+      - name: Prepare offline bundles (node + dsh + switch zip + checksums)
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/prepare_bundles.ps1 -NodeVersion "24.19.0"
+        shell: pwsh
+
+      - name: Sanity check bundles
+        run: |
+          Get-ChildItem _assets | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}}
+          $j = Get-Content _assets/bundle_info.json -Raw | ConvertFrom-Json
+          Write-Host "dsh_version=$($j.dsh_version) node_version=$($j.node_version)"
+          if (-not (Test-Path _assets/node.zip)) { throw "node.zip missing" }
+          if (-not (Test-Path _assets/dsh.zip)) { throw "dsh.zip missing" }
+          if (-not (Test-Path _assets/switch.zip)) { throw "switch.zip missing" }
+        shell: pwsh
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+        shell: pwsh
+
+      - name: Build setup.exe (NSIS)
+        run: makensis /V2 nsis/installer.nsi
+        shell: pwsh
+
+      - name: Verify outputs
+        run: |
+          Get-ChildItem DeepSeek-Harness-Setup.exe | Select-Object Name, Length
+          if (-not (Test-Path DeepSeek-Harness-Setup.exe)) { throw "setup.exe not built" }
+        shell: pwsh
+
+      - name: Upload setup.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeepSeek-Harness-Setup
+          path: DeepSeek-Harness-Setup.exe
+          retention-days: 30
+          if-no-files-found: error
