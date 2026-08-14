@@ -215,7 +215,6 @@ public sealed partial class SwitchWindow : Window
             });
             DispatcherQueue.TryEnqueue(() =>
             {
-                _closing = true;
                 Close();
             });
         }, TaskScheduler.FromCurrentSynchronizationContext());
