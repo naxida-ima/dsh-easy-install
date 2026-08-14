@@ -2,7 +2,13 @@
 dist/
 build/_bundle_work/
 build/dist/
+build/package/
+out/
 _assets/
+winui/**/bin/
+winui/**/obj/
+*.user
+*.suo
 __pycache__/
 *.pyc
 .env

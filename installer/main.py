@@ -4,20 +4,21 @@ import os
 import subprocess
 import sys
 import threading
+import webbrowser
 
 import customtkinter as ctk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from installer import detector, engine
+from installer import detector, engine, opt_components
 from shared import paths
 from shared.ui_theme import (AMBER, BG, BG_2, CARD, CARD_2, CYAN,
                              FONT_BTN, FONT_SMALL, FONT_TITLE, GREEN, LINE,
                              PRIMARY, PRIMARY_HOVER, RED, TEXT, TEXT_DIM,
                              Card, StatusDot, setup_theme)
 
-STEPS = ["欢迎", "环境检测", "安装", "完成"]
-W, H = 1020, 700
+STEPS = ["欢迎", "环境检测", "可选组件", "安装", "完成"]
+W, H = 1020, 720
 
 
 def _res_root():
@@ -90,6 +91,96 @@ class CheckItem(Card):
             d.grid(row=1, column=1, columnspan=2, padx=(0, 16), pady=(2, 10), sticky="we")
 
 
+class OptCard(Card):
+    """可选组件卡片：状态 + 下载安装 + 打开官网"""
+
+    def __init__(self, master, comp):
+        super().__init__(master, fg=CARD, border=LINE)
+        self.comp = comp
+        self.key = comp["key"]
+        self._busy = False
+        self.grid_columnconfigure(1, weight=1)
+
+        self.dot = StatusDot(self, "info")
+        self.dot.grid(row=0, column=0, padx=(16, 12), pady=14, sticky="nw")
+        name = ctk.CTkLabel(self, text=comp["name"], font=("Microsoft YaHei UI", 14, "bold"),
+                            text_color=TEXT, anchor="w")
+        name.grid(row=0, column=1, padx=(0, 8), pady=(12, 0), sticky="w")
+        self.state_lab = ctk.CTkLabel(self, text="", font=("Microsoft YaHei UI", 12),
+                                      text_color=TEXT_DIM, anchor="w")
+        self.state_lab.grid(row=0, column=2, padx=(0, 10), pady=(14, 0), sticky="e")
+        self.btn_web = ctk.CTkButton(self, text="打开官网", width=86, height=30,
+                                     font=("Microsoft YaHei UI", 12),
+                                     fg_color=CARD_2, text_color=TEXT,
+                                     hover_color="#3a3f70", corner_radius=10,
+                                     command=self._open_web)
+        self.btn_web.grid(row=0, column=3, padx=(0, 8), pady=12)
+        self.btn_install = ctk.CTkButton(self, text="下载安装", width=110, height=30,
+                                         font=("Microsoft YaHei UI", 12, "bold"),
+                                         fg_color=PRIMARY, hover_color=PRIMARY_HOVER,
+                                         corner_radius=10, command=self._on_install)
+        self.btn_install.grid(row=0, column=4, padx=(0, 14), pady=12)
+
+        d = ctk.CTkLabel(self, text=comp["desc"], font=FONT_SMALL, text_color=TEXT_DIM,
+                         anchor="w", justify="left", wraplength=600)
+        d.grid(row=1, column=1, columnspan=4, padx=(0, 16), pady=(0, 6), sticky="we")
+
+        self.prog = ctk.CTkProgressBar(self, height=8, corner_radius=4,
+                                       fg_color=CARD_2, progress_color=PRIMARY)
+        self.prog.set(0)
+        self.refresh()
+
+    def refresh(self):
+        if self._busy:
+            return
+        if opt_components.is_installed(self.key):
+            self.dot.configure(text_color=GREEN)
+            self.state_lab.configure(text="已安装 ✓", text_color=GREEN)
+            self.btn_install.configure(state="disabled", text="已安装")
+        else:
+            self.dot.configure(text_color="#6a6f96")
+            self.state_lab.configure(text="未安装", text_color=TEXT_DIM)
+            self.btn_install.configure(state="normal", text="下载安装")
+
+    def _open_web(self):
+        try:
+            webbrowser.open(self.comp["official"])
+        except Exception:
+            pass
+
+    def _on_install(self):
+        if self._busy:
+            return
+        self._busy = True
+        self.btn_install.configure(state="disabled", text="处理中…")
+        self.state_lab.configure(text="准备中…", text_color=AMBER)
+        self.prog.grid(row=2, column=1, columnspan=4, sticky="ew",
+                       padx=(0, 16), pady=(0, 12))
+        self.prog.set(0)
+
+        def status_cb(txt):
+            self.after(0, lambda: self.state_lab.configure(text=txt, text_color=AMBER))
+
+        def prog_cb(pct):
+            self.after(0, lambda: self.prog.set(pct / 100))
+
+        def work():
+            ok, msg = opt_components.install_component(self.key, prog_cb, status_cb)
+            self.after(0, lambda: self._finish_install(ok, msg))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _finish_install(self, ok, msg):
+        self._busy = False
+        self.prog.grid_remove()
+        if ok:
+            self.state_lab.configure(text="✓ " + msg, text_color=GREEN)
+            self.refresh()
+        else:
+            self.state_lab.configure(text="✗ " + msg, text_color=RED)
+            self.btn_install.configure(state="normal", text="重试")
+
+
 class WizardApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -147,12 +238,13 @@ class WizardApp(ctk.CTk):
         self.btn_next.pack(side="right")
 
         self.pages = {}
-        for i in range(4):
+        for i in range(5):
             f = ctk.CTkFrame(self.content, fg_color="transparent")
             self.pages[i] = f
 
         self._build_welcome()
         self._build_detect()
+        self._build_optional()
         self._build_install()
         self._build_done()
 
@@ -260,42 +352,70 @@ class WizardApp(ctk.CTk):
         self.detect_title.configure(text="检测完成")
         self.btn_next.configure(state="normal")
 
-    # ---------- 页 3：安装 ----------
-    def _build_install(self):
+    # ---------- 页 3：可选组件 ----------
+    def _build_optional(self):
         f = self.pages[2]
         f.grid_columnconfigure(0, weight=1)
         f.grid_rowconfigure(1, weight=1)
 
+        ctk.CTkLabel(f, text="可选组件（非必需）", font=FONT_TITLE, text_color=TEXT,
+                     anchor="w").grid(row=0, column=0, sticky="w", padx=6, pady=(26, 2))
+        ctk.CTkLabel(f, text=(
+            "DeepSeek Harness 的运行依赖（Node.js 运行时等）已经全部内置，接下来会随安装一步到位。\n"
+            "下面是几个常用的开发工具，可装可不装，全部跳过也不影响使用。"),
+            font=("Microsoft YaHei UI", 14), text_color=TEXT_DIM,
+            anchor="w", justify="left", wraplength=780).grid(
+            row=0, column=0, sticky="w", padx=6, pady=(44, 14))
+
+        box = ctk.CTkScrollableFrame(f, fg_color="transparent",
+                                     scrollbar_button_color=CARD_2,
+                                     scrollbar_button_hover_color="#3a3f70")
+        box.grid(row=1, column=0, sticky="nsew", pady=(0, 6))
+        for comp in opt_components.COMPONENTS:
+            OptCard(box, comp).pack(fill="x", pady=5)
+
+    # ---------- 页 4：安装 ----------
+    def _build_install(self):
+        f = self.pages[3]
+        f.grid_columnconfigure(0, weight=1)
+        f.grid_rowconfigure(4, weight=1)  # 日志区弹性伸缩，按钮永远可见
+
         ctk.CTkLabel(f, text="开始安装", font=FONT_TITLE, text_color=TEXT,
-                     anchor="w").pack(fill="x", pady=(36, 4))
-        ctk.CTkLabel(f, text="正在把 DeepSeek Harness 和它需要的全部文件安装到你的电脑",
-                     font=("Microsoft YaHei UI", 14), text_color=TEXT_DIM,
-                     anchor="w").pack(fill="x", pady=(0, 22))
+                     anchor="w").grid(row=0, column=0, sticky="w", padx=6, pady=(26, 2))
+        ctk.CTkLabel(f, text=(
+            "DeepSeek Harness 必需的全部文件（含 Node.js 运行时）都已打包在安装程序里，"
+            "无需联网、无需另外安装任何东西。\n点击下方「开始安装」即可一键部署。"),
+            font=("Microsoft YaHei UI", 14), text_color=TEXT_DIM,
+            anchor="w", justify="left", wraplength=780).grid(
+            row=1, column=0, sticky="w", padx=6, pady=(0, 16))
 
         self.inst_phase = ctk.CTkLabel(f, text="准备就绪，点击「开始安装」",
                                        font=("Microsoft YaHei UI", 15),
                                        text_color=TEXT, anchor="w")
-        self.inst_phase.pack(fill="x", padx=6, pady=(0, 10))
+        self.inst_phase.grid(row=2, column=0, sticky="w", padx=6, pady=(0, 8))
 
-        self.inst_bar = ctk.CTkProgressBar(f, height=18, corner_radius=9,
+        barrow = ctk.CTkFrame(f, fg_color="transparent")
+        barrow.grid(row=3, column=0, sticky="ew", padx=6, pady=(0, 4))
+        barrow.grid_columnconfigure(0, weight=1)
+        self.inst_bar = ctk.CTkProgressBar(barrow, height=18, corner_radius=9,
                                            fg_color=CARD_2, progress_color=PRIMARY)
-        self.inst_bar.pack(fill="x", padx=6, pady=(0, 4))
+        self.inst_bar.grid(row=0, column=0, sticky="ew")
         self.inst_bar.set(0)
-        self.inst_pct = ctk.CTkLabel(f, text="0%", font=("Microsoft YaHei UI", 12),
-                                     text_color=TEXT_DIM, anchor="e")
-        self.inst_pct.pack(fill="x", padx=6, pady=(0, 14))
+        self.inst_pct = ctk.CTkLabel(barrow, text="0%", font=("Microsoft YaHei UI", 12),
+                                     text_color=TEXT_DIM, width=52)
+        self.inst_pct.grid(row=0, column=1, padx=(10, 0))
 
-        logbox = ctk.CTkTextbox(f, height=170, fg_color=BG_2, text_color=TEXT_DIM,
+        logbox = ctk.CTkTextbox(f, fg_color=BG_2, text_color=TEXT_DIM,
                                 font=("Consolas", 11), corner_radius=12,
                                 border_width=1, border_color=LINE,
                                 state="disabled", wrap="word")
-        logbox.pack(fill="x", padx=6)
+        logbox.grid(row=4, column=0, sticky="nsew", padx=6, pady=(6, 12))
         self.inst_log = logbox
 
-        self.inst_btn = ctk.CTkButton(f, text="开始安装", height=48, font=FONT_BTN,
+        self.inst_btn = ctk.CTkButton(f, text="🚀 开始安装", height=50, font=FONT_BTN,
                                       fg_color=PRIMARY, hover_color=PRIMARY_HOVER,
                                       corner_radius=14, command=self._start_install)
-        self.inst_btn.pack(pady=(24, 0))
+        self.inst_btn.grid(row=5, column=0, sticky="ew", padx=6, pady=(0, 4))
 
     def _append_log(self, txt):
         self.inst_log.configure(state="normal")
@@ -348,11 +468,10 @@ class WizardApp(ctk.CTk):
             self.inst_phase.configure(text="❌ " + msg, text_color=RED)
             self._append_log("✘ " + msg)
             self.btn_next.configure(state="disabled", text="下一步 →")
-            self.btn_next.configure(text="完成 →", state="normal")
 
-    # ---------- 页 4：完成 ----------
+    # ---------- 页 5：完成 ----------
     def _build_done(self):
-        f = self.pages[3]
+        f = self.pages[4]
         f.grid_columnconfigure(0, weight=1)
         done_img = resource_img("done.png", (110, 110))
         self.done_img_label = ctk.CTkLabel(f, image=done_img, text="")
@@ -407,11 +526,12 @@ class WizardApp(ctk.CTk):
             else:
                 self.btn_next.configure(text="下一步 →", state="normal")
         elif i == 2:
+            self.btn_next.configure(text="开始安装 →", state="normal")
+        elif i == 3:
             self.btn_next.configure(text="下一步 →", state="disabled")
         else:
-            self.btn_next.pack(side="right")
             self.btn_next.configure(text="关闭", state="normal", command=self.destroy)
-        if i != 3:
+        if i != 4:
             try:
                 self.btn_next.pack(side="right")
             except Exception:
@@ -420,12 +540,12 @@ class WizardApp(ctk.CTk):
     def go_next(self):
         if self.step == 1 and not self.detect_done:
             return
-        if self.step == 2:
-            if not self.install_result or not self.install_result[0]:
+        if self.step == 3:
+            if not (self.install_result and self.install_result[0]):
                 if not self._installing:
                     self._start_install()
                 return
-        if self.step < 3:
+        if self.step < 4:
             self.show_step(self.step + 1)
 
     def go_back(self):

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="DshInstaller.Pages.WelcomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="40,30,40,10">
+        <TextBlock Text="欢迎使用 DeepSeek Harness" FontSize="30" FontWeight="Bold"
+                   Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+        <TextBlock Text="DeepSeek 官方出品的 AI 智能体工作台" FontSize="16"
+                   Foreground="{StaticResource BrandBrush}" Margin="0,4,0,24" />
+
+        <Border Background="{ThemeResource CardBrush}" CornerRadius="14" Padding="24,20"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
+            <StackPanel Spacing="10">
+                <TextBlock Text="这是一个能帮你自动完成任务的 AI 助手工具："
+                           FontSize="15" FontWeight="SemiBold" />
+                <TextBlock Text="· 安装过程完全自动化，跟着提示点「下一步」即可&#x0a;"
+                           FontSize="14" TextWrapping="Wrap" />
+                <TextBlock Text="· 所有必需文件（含 Node.js 运行时）已打包在安装程序里，无需联网下载&#x0a;"
+                           FontSize="14" TextWrapping="Wrap" />
+                <TextBlock Text="· 装好后桌面上有一个「开关」，随时可以看到它是开还是关&#x0a;"
+                           FontSize="14" TextWrapping="Wrap" />
+                <TextBlock Text="· 程序只在本机运行，不占用系统权限，卸载也只需点一下"
+                           FontSize="14" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <Border Background="#EEF0FF" CornerRadius="14" Padding="24,18" Margin="0,14,0,0">
+            <StackPanel Spacing="6">
+                <TextBlock Text="电脑要求（安装时会自动检测）" FontSize="14" FontWeight="SemiBold"
+                           Foreground="#3A3F6B" />
+                <TextBlock Text="· Windows 10 或 11（64 位）" FontSize="13" Foreground="#5A5F85" />
+                <TextBlock Text="· 内存 4GB 以上，磁盘剩余 1.5GB 以上" FontSize="13" Foreground="#5A5F85" />
+                <TextBlock Text="· 任意浏览器（如 Edge、Chrome）" FontSize="13" Foreground="#5A5F85" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

@@ -6,7 +6,7 @@ import sys
 APP_NAME = "DeepSeek Harness"
 APP_SHORT = "dsh"
 APP_KEY = "DeepSeekHarness"
-TOOL_VERSION = "1.0.1"
+TOOL_VERSION = "1.1.0"
 PORT = 3080
 WEB_URL = "http://127.0.0.1:3080"
 

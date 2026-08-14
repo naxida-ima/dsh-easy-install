@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Application
+    x:Class="DshSwitch.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="BrandBrush" Color="#4D6BFE" />
+            <SolidColorBrush x:Key="GreenBrush" Color="#4ED884" />
+            <SolidColorBrush x:Key="AmberBrush" Color="#F5B544" />
+            <SolidColorBrush x:Key="RedBrush" Color="#FF5C66" />
+            <SolidColorBrush x:Key="BgBrush" Color="#F3F4FA" />
+            <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

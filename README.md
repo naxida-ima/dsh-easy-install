@@ -1,7 +1,7 @@
 # DeepSeek Harness 一键安装包（dsh-easy-install）
 
 让**完全不懂技术的人**也能安装 DeepSeek Harness（DeepSeek 官方开源的 AI 智能体工作台）。
-交付物是一个精美的 Windows 安装程序 `DeepSeek-Harness-Setup.exe`，双击后逐步引导完成安装，全程无需联网、无需懂 GitHub / Node.js / npm。
+交付物是一个精美的 Windows 便携压缩包，内含 **WinUI 3（Fluent 设计）** 的一键安装向导与桌面开关，解压双击即可安装，全程无需联网、无需懂 GitHub / Node.js / npm。
 
 ## 它解决什么问题
 
@@ -28,13 +28,13 @@
 
 ## 构建（GitHub Actions，Windows）
 
-推送后自动触发，产物为单个 `DeepSeek-Harness-Setup.exe`（Artifact：`DeepSeek-Harness-Setup`）。
+推送后自动触发，产物为 `DeepSeek-Harness-Installer-v2.x.zip`（Artifact：`DeepSeek-Harness-Installer`）。
 
 ```yaml
 # .github/workflows/build.yml 已配置：
-# 1. PyInstaller 构建 install.exe（安装向导）与 switch.exe（桌面开关）
-# 2. prepare_bundles.ps1 下载 Node 便携版 + npm 安装 dsh 离线依赖
-# 3. NSIS 打包全部内容为单个 setup.exe
+# 1. dotnet publish 构建 DshInstaller（安装向导，WinUI 3）与 DshSwitch（桌面开关）
+# 2. prepare_bundles.py 下载 Node 便携版 + npm 安装 dsh 离线依赖
+# 3. 组装便携包目录并打包 zip，发布 GitHub Release
 ```
 
 ## 本地开发
@@ -53,11 +53,15 @@ python scripts/make_assets.py     # 重新生成图标资源
 
 ```
 dsh-installer/
-├── installer/        # 安装向导：detector(环境检测) / engine(安装引擎) / main(GUI)
-├── switch/           # 桌面开关：服务启停 + 托盘 + 大圆开关
-├── shared/           # 公共层：paths / dsh_core(服务管理) / ui_theme
-├── scripts/          # make_assets(图标) / make_zip(打包) / prepare_bundles(离线资源)
-├── nsis/             # NSIS 单文件安装器外壳
+├── winui/                    # WinUI 3 (C#) 主代码
+│   ├── DshInstaller/         # 一键安装向导（5 步流程）
+│   │   ├── MainWindow.xaml   # 步骤条 + 页面导航
+│   │   ├── Pages/            # 欢迎/检测/可选组件/安装/完成
+│   │   └── Core/             # Detector/Installer/Bundle/DshService/OptComponents
+│   ├── DshSwitch/            # 桌面开关（大圆开关 + 启停 + 开机自启 + 卸载）
+│   └── shared/               # （备用 Python 版本保留在 installer/switch/shared）
+├── installer/ switch/ shared/   # Python 版（v1.x 遗留，可回退）
+├── scripts/                  # make_assets(图标) / make_zip(打包) / prepare_bundles(离线资源)
 └── .github/workflows/build.yml
 ```
 

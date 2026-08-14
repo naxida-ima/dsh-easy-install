@@ -5,7 +5,6 @@
 产出（写入 _assets/）：
   node.zip    Node 便携版（zip 根 = node.exe，已去除顶层目录）
   dsh.zip     @deepseek-ai/dsh 完整依赖树（zip 根 = node_modules）
-  switch.zip  桌面开关 onedir（zip 根 = switch.exe）
   bundle_info.json / checksums.json
 """
 import hashlib
@@ -128,20 +127,13 @@ def main():
 
     make_zip(dsh_app, os.path.join(ASSETS, "dsh.zip"))
 
-    # 3. switch.zip（PyInstaller onedir 输出）
-    switch_out = os.path.join(ROOT, "dist", "switch")
-    if os.path.isdir(switch_out):
-        make_zip(switch_out, os.path.join(ASSETS, "switch.zip"))
-    else:
-        raise RuntimeError(f"switch build output missing: {switch_out}")
-
     # 4. 元信息与校验
     with open(os.path.join(ASSETS, "bundle_info.json"), "w", encoding="utf-8") as f:
         json.dump({"dsh_version": dsh_ver, "node_version": node_ver,
                    "built_at": __import__("time").strftime("%Y-%m-%d %H:%M:%S")},
                   f, ensure_ascii=False, indent=2)
     checks = {}
-    for name in ("node.zip", "dsh.zip", "switch.zip"):
+    for name in ("node.zip", "dsh.zip"):
         p = os.path.join(ASSETS, name)
         checks[name] = sha256(p)
         log(f"{name}: {os.path.getsize(p) / 1048576:.1f} MB  sha256={checks[name][:16]}…")

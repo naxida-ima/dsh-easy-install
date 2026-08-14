@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="DshInstaller.Pages.DonePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="40,20,40,10" HorizontalAlignment="Center" Width="680">
+        <Border Width="96" Height="96" CornerRadius="48" Background="#33D68F" HorizontalAlignment="Center">
+            <FontIcon Glyph="&#xE73E;" FontSize="52" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+
+        <TextBlock Text="安装完成！" FontSize="30" FontWeight="Bold"
+                   Foreground="#2EA05A" HorizontalAlignment="Center" Margin="0,18,0,8" />
+        <TextBlock x:Name="SummaryText" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   TextAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,20" />
+
+        <Border Background="{ThemeResource CardBrush}" CornerRadius="14" Padding="26,20"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
+            <StackPanel Spacing="8">
+                <TextBlock Text="接下来怎么做？" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Text="1. 桌面上已经放好了「DeepSeek Harness 开关」" FontSize="14" />
+                <TextBlock Text="2. 点击「立即启动」，程序会自动打开浏览器界面" FontSize="14" />
+                <TextBlock Text="3. 在浏览器界面里填入你的 DeepSeek API Key，就可以开始对话了" FontSize="14" TextWrapping="Wrap" />
+                <TextBlock Text="4. 以后想开就点开关，想关也点开关，开关上能直接看到运行状态" FontSize="14" TextWrapping="Wrap" />
+                <TextBlock Text="（开关会常驻屏幕右下角托盘，开机自动运行，随时可看状态）" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <Button x:Name="LaunchBtn" Content="🚀 立即启动" Height="50" FontSize="16" FontWeight="SemiBold"
+                Background="#33D68F" Foreground="White" CornerRadius="8"
+                HorizontalAlignment="Center" MinWidth="240" Margin="0,22,0,0"
+                Click="LaunchBtn_Click" />
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="DshInstaller.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DshInstaller.Pages"
+    Title="DeepSeek Harness 一键安装">
+
+    <Grid Background="{ThemeResource BgBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 主体：左步骤条 + 右内容 -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 步骤条 -->
+            <Border Grid.Column="0" Background="{ThemeResource CardBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}" BorderThickness="0,0,1,0">
+                <StackPanel x:Name="RailPanel" VerticalAlignment="Center" Margin="20,0,0,0" Spacing="6" />
+            </Border>
+
+            <!-- 内容 -->
+            <Frame x:Name="ContentFrame" Grid.Column="1" />
+        </Grid>
+
+        <!-- 底部按钮条 -->
+        <Grid Grid.Row="1" Padding="24,14,24,18" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BtnBack" Grid.Column="0" Content="← 上一步" MinWidth="110"
+                    Padding="16,8" Click="BtnBack_Click" />
+            <Button x:Name="BtnNext" Grid.Column="2" Content="下一步 →" MinWidth="140"
+                    Padding="20,8" Style="{StaticResource AccentButtonStyle}" Click="BtnNext_Click" />
+        </Grid>
+    </Grid>
+</Window>

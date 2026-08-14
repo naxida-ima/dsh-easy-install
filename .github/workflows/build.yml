@@ -11,101 +11,80 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
-        uses: actions/setup-python@v5
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
         with:
-          python-version: "3.12"
+          dotnet-version: "8.0.x"
 
-      - name: Install Python deps
+      - name: Publish DshSwitch (WinUI 3)
         run: |
-          pip install --no-warn-script-location pyinstaller customtkinter pystray pillow pywin32
+          dotnet publish winui/DshSwitch/DshSwitch.csproj -c Release -o out/switch
         shell: pwsh
 
-      - name: Build switch.exe (PyInstaller)
+      - name: Publish DshInstaller (WinUI 3)
         run: |
-          pyinstaller --noconfirm --clean switch.spec
+          dotnet publish winui/DshInstaller/DshInstaller.csproj -c Release -o out/install
         shell: pwsh
 
-      - name: Build install.exe (PyInstaller)
-        run: |
-          pyinstaller --noconfirm --clean installer.spec
-        shell: pwsh
-
-      - name: Prepare offline bundles (node + dsh + switch zip + checksums)
+      - name: Prepare offline bundles (node + dsh + checksums)
         run: |
           python scripts/prepare_bundles.py
         shell: pwsh
 
-      - name: Sanity check bundles
-        run: |
-          Get-ChildItem _assets | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}}
-          $j = Get-Content _assets/bundle_info.json -Raw | ConvertFrom-Json
-          Write-Host "dsh_version=$($j.dsh_version) node_version=$($j.node_version)"
-          if (-not (Test-Path _assets/node.zip)) { throw "node.zip missing" }
-          if (-not (Test-Path _assets/dsh.zip)) { throw "dsh.zip missing" }
-          if (-not (Test-Path _assets/switch.zip)) { throw "switch.zip missing" }
-        shell: pwsh
-
       - name: Assemble portable package
         run: |
-          $pkg = 'build\package\DeepSeek-Harness-一键安装'
+          $pkg = 'build\package\DeepSeek-Harness-Installer'
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
-          Copy-Item -Recurse -Force 'dist\install\*' $pkg
+          Copy-Item -Recurse -Force 'out\install\*' $pkg
+          Copy-Item -Recurse -Force 'out\switch' (Join-Path $pkg 'switch')
           Copy-Item -Recurse -Force '_assets' (Join-Path $pkg '_assets')
-          Move-Item -Force (Join-Path $pkg 'install.exe') (Join-Path $pkg '安装DeepSeekHarness.exe')
+          Copy-Item -Force (Join-Path $pkg 'DeepSeekHarness-Installer.exe') (Join-Path $pkg '安装DeepSeekHarness.exe')
+          Remove-Item -Force (Join-Path $pkg 'DeepSeekHarness-Installer.exe')
           Get-ChildItem $pkg | Select-Object Name
           Get-ChildItem (Join-Path $pkg '_assets') | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}}
         shell: pwsh
 
       - name: Package zip
         run: |
-          python scripts/make_zip.py "build\package" "DeepSeek-Harness-Installer-v1.0.1.zip" 2>&1 | Tee-Object -FilePath pkg-build.log
+          python scripts/make_zip.py "build\package" "DeepSeek-Harness-Installer-v2.0.0.zip" 2>&1 | Tee-Object -FilePath pkg-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content pkg-build.log -Tail 60
             throw "zip packaging failed with exit code $LASTEXITCODE"
           }
         shell: pwsh
 
-      - name: Upload packaging log (on failure only)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pkg-build-log
-          path: pkg-build.log
-          retention-days: 7
-          if-no-files-found: ignore
-
       - name: Verify outputs
         run: |
-          Get-ChildItem DeepSeek-Harness-Installer-v1.0.1.zip | Select-Object Name, Length
-          if (-not (Test-Path DeepSeek-Harness-Installer-v1.0.1.zip)) { throw "zip not built" }
+          Get-ChildItem DeepSeek-Harness-Installer-v2.0.0.zip | Select-Object Name, Length
+          if (-not (Test-Path DeepSeek-Harness-Installer-v2.0.0.zip)) { throw "zip not built" }
         shell: pwsh
 
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: DeepSeek-Harness-Installer
-          path: DeepSeek-Harness-Installer-v1.0.1.zip
+          path: DeepSeek-Harness-Installer-v2.0.0.zip
           retention-days: 30
           if-no-files-found: error
+
       - name: Publish GitHub Release (download link for everyone)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v1.0.1 "DeepSeek-Harness-Installer-v1.0.1.zip" `
+          gh release create v2.0.0 "DeepSeek-Harness-Installer-v2.0.0.zip" `
             --repo ${{ github.repository }} `
-            --title "DeepSeek Harness 一键安装包 v1.0.1" `
-            --notes "解压后双击「安装DeepSeekHarness.exe」即可，全部依赖已内置，无需联网。" `
+            --title "DeepSeek Harness 一键安装包 v2.0.0（WinUI 3 界面）" `
+            --notes "解压后双击「安装DeepSeekHarness.exe」即可，全部依赖已内置，无需联网。`nWinUI 3 Fluent 界面，含环境检测、可选组件、一键安装、桌面开关。" `
           | Out-Null
           if ($LASTEXITCODE -ne 0) {
             Write-Host "release exists, uploading with clobber..."
-            gh release upload v1.0.1 "DeepSeek-Harness-Installer-v1.0.1.zip" --clobber `
+            gh release upload v2.0.0 "DeepSeek-Harness-Installer-v2.0.0.zip" --clobber `
               --repo ${{ github.repository }}
           }
-          Write-Host "Release ready: https://github.com/${{ github.repository }}/releases/tag/v1.0.1"
+          Write-Host "Release ready: https://github.com/${{ github.repository }}/releases/tag/v2.0.0"
         shell: pwsh

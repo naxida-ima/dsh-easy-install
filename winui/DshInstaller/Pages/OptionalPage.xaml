@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="DshInstaller.Pages.OptionalPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="32,20,32,10" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="可选组件（非必需）" FontSize="24" FontWeight="Bold" />
+            <TextBlock Text="DeepSeek Harness 的运行依赖（Node.js 运行时等）已全部内置，随安装一步到位。&#x0a;下面是几个常用的开发工具，可装可不装，全部跳过也不影响使用。"
+                       FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap" Margin="0,4,0,6" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="CardPanel" Spacing="10" Margin="0,4,0,0" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>
