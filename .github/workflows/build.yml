@@ -21,9 +21,18 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Publish DshSwitch (WinUI 3)
+      - name: Publish DshSwitch (WinUI 3, VS MSBuild)
         run: |
-          dotnet publish winui/DshSwitch/DshSwitch.csproj -c Release -o out/switch 2>&1 | Tee-Object -FilePath switch-build.log
+          $msb = @(
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
+            "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
+            "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $msb) { throw "VS MSBuild not found" }
+          & $msb winui\DshSwitch\DshSwitch.csproj -t:Publish -p:Configuration=Release `
+            -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true `
+            -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true `
+            -p:PublishDir="$env:GITHUB_WORKSPACE\out\switch\" -v:m 2>&1 | Tee-Object -FilePath switch-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content switch-build.log -Tail 60
             throw "DshSwitch publish failed with exit code $LASTEXITCODE"
@@ -39,9 +48,18 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Publish DshInstaller (WinUI 3)
+      - name: Publish DshInstaller (WinUI 3, VS MSBuild)
         run: |
-          dotnet publish winui/DshInstaller/DshInstaller.csproj -c Release -o out/install 2>&1 | Tee-Object -FilePath install-build.log
+          $msb = @(
+            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
+            "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
+            "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $msb) { throw "VS MSBuild not found" }
+          & $msb winui\DshInstaller\DshInstaller.csproj -t:Publish -p:Configuration=Release `
+            -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true `
+            -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true `
+            -p:PublishDir="$env:GITHUB_WORKSPACE\out\install\" -v:m 2>&1 | Tee-Object -FilePath install-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content install-build.log -Tail 60
             throw "DshInstaller publish failed with exit code $LASTEXITCODE"
