@@ -1,4 +1,4 @@
-; DeepSeek Harness 一键安装包（NSIS 外壳）
+﻿; DeepSeek Harness 一键安装包（NSIS 外壳）
 ; 作用：把「安装向导 + 全部离线依赖」打包成单个 setup.exe，解压后自动拉起向导
 
 Unicode True
@@ -12,8 +12,13 @@ CRCCheck on
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 
-!define MUI_ICON "assets\icon.ico"
-!define MUI_UNICON "assets\icon.ico"
+; 源码根目录：CI 中来自 GITHUB_WORKSPACE 环境变量（编译期求值）
+!ifndef SRCDIR
+  !define SRCDIR "$%GITHUB_WORKSPACE%"
+!endif
+
+!define MUI_ICON "${SRCDIR}\assets\icon.ico"
+!define MUI_UNICON "${SRCDIR}\assets\icon.ico"
 !define MUI_ABORTWARNING
 
 !define MUI_WELCOMEPAGE_TITLE "欢迎使用 DeepSeek Harness 一键安装包"
@@ -39,14 +44,14 @@ CRCCheck on
 
 Section "Install" SEC_MAIN
   SetOutPath "$INSTDIR\install"
-  File /r "dist\install\*.*"
+  File /r "${SRCDIR}\dist\install\*.*"
 
   SetOutPath "$INSTDIR\install\_assets"
-  File "_assets\node.zip"
-  File "_assets\dsh.zip"
-  File "_assets\switch.zip"
-  File "_assets\bundle_info.json"
-  File "_assets\checksums.json"
+  File "${SRCDIR}\_assets\node.zip"
+  File "${SRCDIR}\_assets\dsh.zip"
+  File "${SRCDIR}\_assets\switch.zip"
+  File "${SRCDIR}\_assets\bundle_info.json"
+  File "${SRCDIR}\_assets\checksums.json"
 
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 SectionEnd

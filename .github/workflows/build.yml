@@ -55,9 +55,41 @@ jobs:
         run: choco install nsis -y --no-progress
         shell: pwsh
 
-      - name: Build setup.exe (NSIS)
-        run: makensis /V2 nsis/installer.nsi
+      - name: Pre-check NSIS inputs
+        run: |
+          $paths = @(
+            'dist\install\install.exe',
+            'dist\switch\switch.exe',
+            '_assets\node.zip',
+            '_assets\dsh.zip',
+            '_assets\switch.zip',
+            '_assets\bundle_info.json',
+            '_assets\checksums.json',
+            'assets\icon.ico'
+          )
+          foreach ($p in $paths) {
+            if (-not (Test-Path $p)) { throw "missing input: $p" }
+            Write-Host "OK $p"
+          }
         shell: pwsh
+
+      - name: Build setup.exe (NSIS)
+        run: |
+          makensis /V2 nsis/installer.nsi 2>&1 | Tee-Object -FilePath nsis-build.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content nsis-build.log -Tail 40
+            throw "makensis failed with exit code $LASTEXITCODE"
+          }
+        shell: pwsh
+
+      - name: Upload NSIS log (on failure only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nsis-build-log
+          path: nsis-build.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Verify outputs
         run: |
