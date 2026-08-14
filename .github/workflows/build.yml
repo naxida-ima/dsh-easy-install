@@ -38,7 +38,7 @@ jobs:
 
       - name: Prepare offline bundles (node + dsh + switch zip + checksums)
         run: |
-          powershell -ExecutionPolicy Bypass -File scripts/prepare_bundles.ps1 -NodeVersion "24.19.0"
+          python scripts/prepare_bundles.py
         shell: pwsh
 
       - name: Sanity check bundles
