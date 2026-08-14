@@ -23,13 +23,39 @@ jobs:
 
       - name: Publish DshSwitch (WinUI 3)
         run: |
-          dotnet publish winui/DshSwitch/DshSwitch.csproj -c Release -o out/switch
+          dotnet publish winui/DshSwitch/DshSwitch.csproj -c Release -o out/switch 2>&1 | Tee-Object -FilePath switch-build.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content switch-build.log -Tail 60
+            throw "DshSwitch publish failed with exit code $LASTEXITCODE"
+          }
         shell: pwsh
+
+      - name: Upload switch build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: switch-build-log
+          path: switch-build.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Publish DshInstaller (WinUI 3)
         run: |
-          dotnet publish winui/DshInstaller/DshInstaller.csproj -c Release -o out/install
+          dotnet publish winui/DshInstaller/DshInstaller.csproj -c Release -o out/install 2>&1 | Tee-Object -FilePath install-build.log
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content install-build.log -Tail 60
+            throw "DshInstaller publish failed with exit code $LASTEXITCODE"
+          }
         shell: pwsh
+
+      - name: Upload installer build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-build-log
+          path: install-build.log
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Prepare offline bundles (node + dsh + checksums)
         run: |
