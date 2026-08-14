@@ -51,56 +51,32 @@ jobs:
           if (-not (Test-Path _assets/switch.zip)) { throw "switch.zip missing" }
         shell: pwsh
 
-      - name: Install NSIS
-        run: choco install nsis -y --no-progress
-        shell: pwsh
-
-      - name: Pre-check NSIS inputs
+      - name: Assemble portable package
         run: |
-          $paths = @(
-            'dist\install\install.exe',
-            'dist\switch\switch.exe',
-            '_assets\node.zip',
-            '_assets\dsh.zip',
-            '_assets\switch.zip',
-            '_assets\bundle_info.json',
-            '_assets\checksums.json',
-            'assets\icon.ico'
-          )
-          foreach ($p in $paths) {
-            if (-not (Test-Path $p)) { throw "missing input: $p" }
-            Write-Host "OK $p"
-          }
+          $pkg = 'build\package\DeepSeek-Harness-一键安装'
+          New-Item -ItemType Directory -Force -Path $pkg | Out-Null
+          Copy-Item -Recurse -Force 'dist\install\*' $pkg
+          Copy-Item -Recurse -Force '_assets' (Join-Path $pkg '_assets')
+          Move-Item -Force (Join-Path $pkg 'install.exe') (Join-Path $pkg '安装DeepSeekHarness.exe')
+          Get-ChildItem $pkg | Select-Object Name
+          Get-ChildItem (Join-Path $pkg '_assets') | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}}
         shell: pwsh
 
-      - name: Build setup.exe (NSIS)
+      - name: Package zip
         run: |
-          makensis /V2 nsis/installer.nsi 2>&1 | Tee-Object -FilePath nsis-build.log
-          if ($LASTEXITCODE -ne 0) {
-            Get-Content nsis-build.log -Tail 40
-            throw "makensis failed with exit code $LASTEXITCODE"
-          }
+          python scripts/make_zip.py "build\package" "DeepSeek-Harness-一键安装-v1.0.0.zip"
         shell: pwsh
-
-      - name: Upload NSIS log (on failure only)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nsis-build-log
-          path: nsis-build.log
-          retention-days: 7
-          if-no-files-found: ignore
 
       - name: Verify outputs
         run: |
-          Get-ChildItem DeepSeek-Harness-Setup.exe | Select-Object Name, Length
-          if (-not (Test-Path DeepSeek-Harness-Setup.exe)) { throw "setup.exe not built" }
+          Get-ChildItem DeepSeek-Harness-一键安装-v1.0.0.zip | Select-Object Name, Length
+          if (-not (Test-Path DeepSeek-Harness-一键安装-v1.0.0.zip)) { throw "zip not built" }
         shell: pwsh
 
-      - name: Upload setup.exe artifact
+      - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DeepSeek-Harness-Setup
-          path: DeepSeek-Harness-Setup.exe
+          name: DeepSeek-Harness-一键安装
+          path: DeepSeek-Harness-一键安装-v1.0.0.zip
           retention-days: 30
           if-no-files-found: error

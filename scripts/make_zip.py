@@ -6,8 +6,10 @@ import sys
 import zipfile
 
 
-def main():
-    src, dst = sys.argv[1], sys.argv[2]
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    src, dst = argv[0], argv[1]
     src = os.path.abspath(src)
     total = 0
     for root, dirs, files in os.walk(src):
