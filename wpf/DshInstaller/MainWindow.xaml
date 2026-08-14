@@ -1,0 +1,118 @@
+<Window x:Class="DshInstaller.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DeepSeek Harness 一键安装"
+        Width="1040" Height="740"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" FontFamily="Microsoft YaHei UI">
+
+    <Border Background="{StaticResource BgBrush}" CornerRadius="14"
+            BorderBrush="#D5D9E8" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="40" ShadowDepth="4" Opacity="0.25" Color="#3A4468" />
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="46" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 标题栏 -->
+            <Grid Grid.Row="0" Background="#FFFFFF" MouseLeftButtonDown="TitleBar_MouseDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="18,0,0,0" VerticalAlignment="Center">
+                    <Border Width="26" Height="26" CornerRadius="13" Background="{StaticResource BrandBrush}">
+                        <TextBlock Text="⚡" FontSize="14" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="DeepSeek Harness 一键安装" FontSize="14" FontWeight="SemiBold"
+                               Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="MinBtn" Content="─" Width="44" Height="44" FontSize="14"
+                            Background="Transparent" BorderThickness="0" Foreground="#6B7280"
+                            Click="MinBtn_Click">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" Background="Transparent">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#F0F2FA" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button x:Name="CloseBtn" Content="✕" Width="46" Height="44" FontSize="13"
+                            Background="Transparent" BorderThickness="0" Foreground="#6B7280"
+                            Click="CloseBtn_Click">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" Background="Transparent">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#DC3C46" />
+                                                    <Setter Property="Foreground" Value="White" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- 主体 -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="210" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 步骤条 -->
+                <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="{StaticResource DividerBrush}"
+                        BorderThickness="0,0,1,0">
+                    <StackPanel x:Name="RailPanel" VerticalAlignment="Center" Margin="26,0,0,0" />
+                </Border>
+
+                <!-- 内容 -->
+                <ContentControl x:Name="PageHost" Grid.Column="1" Focusable="False" />
+            </Grid>
+
+            <!-- 底部按钮条 -->
+            <Grid Grid.Row="2" Background="#FFFFFF" BorderBrush="{StaticResource DividerBrush}"
+                  BorderThickness="0,1,0,0" Padding="26,14,26,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="BtnBack" Grid.Column="0" Content="← 上一步"
+                        Style="{StaticResource SecondaryButton}" Click="BtnBack_Click" />
+                <Button x:Name="BtnNext" Grid.Column="2" Content="下一步 →"
+                        Style="{StaticResource PrimaryButton}" Click="BtnNext_Click" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

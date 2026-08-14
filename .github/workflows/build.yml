@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,74 +21,22 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Publish DshSwitch (WinUI 3, VS MSBuild)
+      - name: Publish DshSwitch (WPF)
         run: |
-          $msb = @(
-            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
-            "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
-            "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
-          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $msb) { throw "VS MSBuild not found" }
-          Write-Host "Using MSBuild: $msb"
-          & $msb winui\DshSwitch\DshSwitch.csproj -t:Publish -p:Configuration=Release `
-            -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true `
-            -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true `
-            -p:PublishDir="$env:GITHUB_WORKSPACE\out\switch\" -v:m 2>&1 | Tee-Object -FilePath switch-build.log
+          dotnet publish wpf/DshSwitch/DshSwitch.csproj -c Release -r win-x64 --self-contained true -o out/switch 2>&1 | Tee-Object -FilePath switch-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content switch-build.log -Tail 60
-            Get-Content switch-build.log -Tail 40 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            throw "DshSwitch publish failed with exit code $LASTEXITCODE"
+            throw "DshSwitch publish failed"
           }
         shell: pwsh
 
-      - name: Commit switch build log (on failure)
-        if: failure()
+      - name: Publish DshInstaller (WPF)
         run: |
-          git config user.email "ci@naxida.local"
-          git config user.name "CI Build"
-          git add -f switch-build.log
-          git commit -m "ci: switch build log (run ${{ github.run_id }})" || true
-          git push origin main || true
-        shell: pwsh
-
-      - name: Publish DshInstaller (WinUI 3, VS MSBuild)
-        run: |
-          $msb = @(
-            "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe",
-            "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe",
-            "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
-          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-          if (-not $msb) { throw "VS MSBuild not found" }
-          Write-Host "Using MSBuild: $msb"
-          & $msb winui\DshInstaller\DshInstaller.csproj -t:Publish -p:Configuration=Release `
-            -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true `
-            -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true `
-            -p:PublishDir="$env:GITHUB_WORKSPACE\out\install\" -v:m 2>&1 | Tee-Object -FilePath install-build.log
+          dotnet publish wpf/DshInstaller/DshInstaller.csproj -c Release -r win-x64 --self-contained true -o out/install 2>&1 | Tee-Object -FilePath install-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content install-build.log -Tail 60
-            Get-Content install-build.log -Tail 40 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
-            throw "DshInstaller publish failed with exit code $LASTEXITCODE"
+            throw "DshInstaller publish failed"
           }
-        shell: pwsh
-
-      - name: Commit installer build log (on failure)
-        if: failure()
-        run: |
-          git config user.email "ci@naxida.local"
-          git config user.name "CI Build"
-          git add -f install-build.log
-          git commit -m "ci: install build log (run ${{ github.run_id }})" || true
-          git push origin main || true
-        shell: pwsh
-
-      - name: Commit XAML compiler io (on failure)
-        if: failure()
-        run: |
-          git config user.email "ci@naxida.local"
-          git config user.name "CI Build"
-          git add -f winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
-          git commit -m "ci: xaml io (run ${{ github.run_id }})" || true
-          git push origin main || true
         shell: pwsh
 
       - name: Prepare offline bundles (node + dsh + checksums)
@@ -100,7 +48,7 @@ jobs:
         run: |
           $pkg = 'build\package\DeepSeek-Harness-Installer'
           New-Item -ItemType Directory -Force -Path $pkg | Out-Null
-          Copy-Item -Recurse -Force 'out\install\*' $pkg
+          Copy-Item -Force 'out\install\DeepSeekHarness-Installer.exe' $pkg
           Copy-Item -Recurse -Force 'out\switch' (Join-Path $pkg 'switch')
           Copy-Item -Recurse -Force '_assets' (Join-Path $pkg '_assets')
           Copy-Item -Force (Join-Path $pkg 'DeepSeekHarness-Installer.exe') (Join-Path $pkg '安装DeepSeekHarness.exe')
@@ -138,8 +86,8 @@ jobs:
         run: |
           gh release create v2.0.0 "DeepSeek-Harness-Installer-v2.0.0.zip" `
             --repo ${{ github.repository }} `
-            --title "DeepSeek Harness 一键安装包 v2.0.0（WinUI 3 界面）" `
-            --notes "解压后双击「安装DeepSeekHarness.exe」即可，全部依赖已内置，无需联网。`nWinUI 3 Fluent 界面，含环境检测、可选组件、一键安装、桌面开关。" `
+            --title "DeepSeek Harness 一键安装包 v2.0.0（WPF Fluent 界面）" `
+            --notes "解压后双击「安装DeepSeekHarness.exe」即可，全部依赖已内置，无需联网。`nFluent 风格界面：环境检测、可选组件、一键安装、桌面开关（托盘常驻）。" `
           | Out-Null
           if ($LASTEXITCODE -ne 0) {
             Write-Host "release exists, uploading with clobber..."
