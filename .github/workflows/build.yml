@@ -41,14 +41,15 @@ jobs:
           }
         shell: pwsh
 
-      - name: Upload switch build log (on failure)
+      - name: Commit switch build log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: switch-build-log-${{ github.run_id }}
-          path: switch-build.log
-          retention-days: 7
-          if-no-files-found: ignore
+        run: |
+          git config user.email "ci@naxida.local"
+          git config user.name "CI Build"
+          git add -f switch-build.log
+          git commit -m "ci: switch build log (run ${{ github.run_id }})" || true
+          git push origin main || true
+        shell: pwsh
 
       - name: Publish DshInstaller (WinUI 3, VS MSBuild)
         run: |
@@ -70,27 +71,25 @@ jobs:
           }
         shell: pwsh
 
-      - name: Upload installer build log (on failure)
+      - name: Commit installer build log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-build-log-${{ github.run_id }}
-          path: install-build.log
-          retention-days: 7
-          if-no-files-found: ignore
+        run: |
+          git config user.email "ci@naxida.local"
+          git config user.name "CI Build"
+          git add -f install-build.log
+          git commit -m "ci: install build log (run ${{ github.run_id }})" || true
+          git push origin main || true
+        shell: pwsh
 
-      - name: Upload XAML compiler io (on failure)
+      - name: Commit XAML compiler io (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: xaml-io-${{ github.run_id }}
-          path: |
-            winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/input.json
-            winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
-            winui/DshInstaller/obj/Release/net8.0-windows10.0.19041.0/win-x64/input.json
-            winui/DshInstaller/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
-          retention-days: 7
-          if-no-files-found: ignore
+        run: |
+          git config user.email "ci@naxida.local"
+          git config user.name "CI Build"
+          git add -f winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
+          git commit -m "ci: xaml io (run ${{ github.run_id }})" || true
+          git push origin main || true
+        shell: pwsh
 
       - name: Prepare offline bundles (node + dsh + checksums)
         run: |
