@@ -36,6 +36,7 @@ jobs:
             -p:PublishDir="$env:GITHUB_WORKSPACE\out\switch\" -v:m 2>&1 | Tee-Object -FilePath switch-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content switch-build.log -Tail 60
+            Get-Content switch-build.log -Tail 40 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
             throw "DshSwitch publish failed with exit code $LASTEXITCODE"
           }
         shell: pwsh
@@ -64,6 +65,7 @@ jobs:
             -p:PublishDir="$env:GITHUB_WORKSPACE\out\install\" -v:m 2>&1 | Tee-Object -FilePath install-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content install-build.log -Tail 60
+            Get-Content install-build.log -Tail 40 | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
             throw "DshInstaller publish failed with exit code $LASTEXITCODE"
           }
         shell: pwsh
