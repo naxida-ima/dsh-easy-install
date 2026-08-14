@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """DeepSeek Harness 桌面开关：大圆开关 + 托盘状态灯 + 一键启停"""
-import io
 import os
 import subprocess
 import sys
@@ -13,11 +12,10 @@ import customtkinter as ctk
 from PIL import Image, ImageDraw
 
 from shared import paths
-from shared.dsh_core import (get_status, port_open, read_pid, process_alive,
-                             start_service, stop_service)
+from shared.dsh_core import get_status, start_service, stop_service
 from shared.paths import log
-from shared.ui_theme import (AMBER, BG, CARD, CARD_2, CYAN, FONT, FONT_BIG,
-                             FONT_BTN, FONT_SMALL, FONT_TITLE, GREEN, LINE,
+from shared.ui_theme import (AMBER, BG, CARD_2, FONT_BIG,
+                             FONT_BTN, FONT_SMALL, GREEN,
                              PRIMARY, RED, TEXT, TEXT_DIM, setup_theme)
 
 W, H = 470, 640

@@ -64,7 +64,7 @@ jobs:
 
       - name: Package zip
         run: |
-          python scripts/make_zip.py "build\package" "DeepSeek-Harness-Installer-v1.0.0.zip" 2>&1 | Tee-Object -FilePath pkg-build.log
+          python scripts/make_zip.py "build\package" "DeepSeek-Harness-Installer-v1.0.1.zip" 2>&1 | Tee-Object -FilePath pkg-build.log
           if ($LASTEXITCODE -ne 0) {
             Get-Content pkg-build.log -Tail 60
             throw "zip packaging failed with exit code $LASTEXITCODE"
@@ -82,30 +82,30 @@ jobs:
 
       - name: Verify outputs
         run: |
-          Get-ChildItem DeepSeek-Harness-Installer-v1.0.0.zip | Select-Object Name, Length
-          if (-not (Test-Path DeepSeek-Harness-Installer-v1.0.0.zip)) { throw "zip not built" }
+          Get-ChildItem DeepSeek-Harness-Installer-v1.0.1.zip | Select-Object Name, Length
+          if (-not (Test-Path DeepSeek-Harness-Installer-v1.0.1.zip)) { throw "zip not built" }
         shell: pwsh
 
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
           name: DeepSeek-Harness-Installer
-          path: DeepSeek-Harness-Installer-v1.0.0.zip
+          path: DeepSeek-Harness-Installer-v1.0.1.zip
           retention-days: 30
           if-no-files-found: error
       - name: Publish GitHub Release (download link for everyone)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v1.0.0 "DeepSeek-Harness-Installer-v1.0.0.zip" `
+          gh release create v1.0.1 "DeepSeek-Harness-Installer-v1.0.1.zip" `
             --repo ${{ github.repository }} `
-            --title "DeepSeek Harness 一键安装包 v1.0.0" `
+            --title "DeepSeek Harness 一键安装包 v1.0.1" `
             --notes "解压后双击「安装DeepSeekHarness.exe」即可，全部依赖已内置，无需联网。" `
           | Out-Null
           if ($LASTEXITCODE -ne 0) {
             Write-Host "release exists, uploading with clobber..."
-            gh release upload v1.0.0 "DeepSeek-Harness-Installer-v1.0.0.zip" --clobber `
+            gh release upload v1.0.1 "DeepSeek-Harness-Installer-v1.0.1.zip" --clobber `
               --repo ${{ github.repository }}
           }
-          Write-Host "Release ready: https://github.com/${{ github.repository }}/releases/tag/v1.0.0"
+          Write-Host "Release ready: https://github.com/${{ github.repository }}/releases/tag/v1.0.1"
         shell: pwsh

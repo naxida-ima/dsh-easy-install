@@ -11,8 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from installer import detector, engine
 from shared import paths
-from shared.dsh_core import start_service
-from shared.ui_theme import (AMBER, BG, BG_2, CARD, CARD_2, CYAN, FONT, FONT_BIG,
+from shared.ui_theme import (AMBER, BG, BG_2, CARD, CARD_2, CYAN,
                              FONT_BTN, FONT_SMALL, FONT_TITLE, GREEN, LINE,
                              PRIMARY, PRIMARY_HOVER, RED, TEXT, TEXT_DIM,
                              Card, StatusDot, setup_theme)
@@ -21,11 +20,15 @@ STEPS = ["欢迎", "环境检测", "安装", "完成"]
 W, H = 1020, 700
 
 
+def _res_root():
+    """资源根目录：源码模式 / PyInstaller 打包模式均可"""
+    if getattr(sys, "frozen", False):
+        return getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 def resource_img(name, size):
-    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    p = os.path.join(base, "assets", name)
-    if not os.path.exists(p):
-        p = os.path.join(os.path.dirname(sys.executable), "assets", name)
+    p = os.path.join(_res_root(), "assets", name)
     if os.path.exists(p):
         from PIL import Image
         return ctk.CTkImage(Image.open(p), size=size)
