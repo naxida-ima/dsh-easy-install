@@ -29,6 +29,7 @@ jobs:
             "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
           ) | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $msb) { throw "VS MSBuild not found" }
+          Write-Host "Using MSBuild: $msb"
           & $msb winui\DshSwitch\DshSwitch.csproj -t:Publish -p:Configuration=Release `
             -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true `
             -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true `
@@ -43,7 +44,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: switch-build-log
+          name: switch-build-log-${{ github.run_id }}
           path: switch-build.log
           retention-days: 7
           if-no-files-found: ignore
@@ -56,6 +57,7 @@ jobs:
             "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
           ) | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $msb) { throw "VS MSBuild not found" }
+          Write-Host "Using MSBuild: $msb"
           & $msb winui\DshInstaller\DshInstaller.csproj -t:Publish -p:Configuration=Release `
             -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true `
             -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true `
@@ -70,7 +72,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: install-build-log
+          name: install-build-log-${{ github.run_id }}
           path: install-build.log
           retention-days: 7
           if-no-files-found: ignore
@@ -79,7 +81,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: xaml-io
+          name: xaml-io-${{ github.run_id }}
           path: |
             winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/input.json
             winui/DshSwitch/obj/Release/net8.0-windows10.0.19041.0/win-x64/output.json
