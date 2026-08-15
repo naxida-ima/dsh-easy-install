@@ -7,7 +7,7 @@ public static class Paths
 {
     public const string AppName = "DeepSeek Harness";
     public const string AppKey = "DeepSeekHarness";
-    public const string ToolVersion = "2.0.0";
+    public const string ToolVersion = "2.0.1";
     public const int Port = 3080;
     public const string WebUrl = "http://127.0.0.1:3080";
 
