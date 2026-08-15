@@ -61,28 +61,28 @@ jobs:
         run: |
           $pkg = 'build\package\DeepSeek-Harness-Installer'
           $exe = Join-Path $pkg '安装DeepSeekHarness.exe'
-          if (-not (Test-Path $exe)) { throw "installer exe missing: $exe" }
-          Write-Host "==> running installer --selftest (verify + install + start service + check port + stop)"
+          $out = 'smoke-out.txt'
+          "== smoke test start ==" | Out-File $out
+          "exe: $exe" | Out-File $out -Append
+          "exe exists: $(Test-Path $exe)" | Out-File $out -Append
+          if (-not (Test-Path $exe)) { Get-Content $out; throw "installer exe missing" }
           & $exe --selftest
-          $code = $LASTEXITCODE
-          $log = Join-Path $env:LOCALAPPDATA 'DeepSeekHarness\logs\selftest.log'
-          if (Test-Path $log) { Get-Content $log }
-          if ($code -ne 0) { throw "INSTALLER SELFTEST FAILED (exit $code)" }
-          Write-Host "==> installer selftest PASS"
+          "installer exit code: $LASTEXITCODE" | Out-File $out -Append
+          $sl = Join-Path $env:LOCALAPPDATA 'DeepSeekHarness\logs\selftest.log'
+          "selftest.log exists: $(Test-Path $sl)" | Out-File $out -Append
+          if (Test-Path $sl) { Get-Content $sl | Out-File $out -Append }
+          Get-Content $out
+          if ($LASTEXITCODE -ne 0) { throw "INSTALLER SELFTEST FAILED (exit $LASTEXITCODE)" }
         shell: pwsh
 
-      - name: Commit selftest log (on failure)
-        if: failure()
+      - name: Commit smoke output (always)
+        if: always()
         run: |
-          $log = Join-Path $env:LOCALAPPDATA 'DeepSeekHarness\logs\selftest.log'
-          if (Test-Path $log) {
-            Copy-Item $log 'selftest.log' -Force
-            git config user.email "ci@naxida.local"
-            git config user.name "CI Build"
-            git add -f selftest.log
-            git commit -m "ci: selftest log (run ${{ github.run_id }})" || true
-            git push origin main || true
-          }
+          git config user.email "ci@naxida.local"
+          git config user.name "CI Build"
+          git add -f smoke-out.txt selftest.log switch-selftest.log
+          git commit -m "ci: smoke output (run ${{ github.run_id }})" || true
+          git push origin main || true
         shell: pwsh
 
       - name: Smoke test switch (service start/stop)
