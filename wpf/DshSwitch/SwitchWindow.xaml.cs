@@ -150,7 +150,7 @@ public partial class SwitchWindow : Window
     {
         if (_running)
         {
-            SwitchOuter.Background = new RadialGradientBrush(GreenC, Color.FromArgb(0, 78, 216, 132)) { RadiusX = 0.9, RadiusY = 0.9, GradientOrigin = new Point(0.5, 0.5) };
+            SwitchOuter.Background = new RadialGradientBrush(GreenC, Color.FromArgb(0, 78, 216, 132)) { RadiusX = 0.9, RadiusY = 0.9, GradientOrigin = new System.Windows.Point(0.5, 0.5) };
             SwitchCore.Background = new SolidColorBrush(Color.FromRgb(235, 250, 242));
             SwitchCore.BorderBrush = new SolidColorBrush(Color.FromRgb(78, 216, 132));
             PowerText.Foreground = new SolidColorBrush(Color.FromRgb(46, 160, 90));
@@ -162,7 +162,7 @@ public partial class SwitchWindow : Window
         }
         else
         {
-            SwitchOuter.Background = new RadialGradientBrush(Color.FromRgb(226, 229, 240), Color.FromRgb(244, 245, 251)) { RadiusX = 0.9, RadiusY = 0.9, GradientOrigin = new Point(0.5, 0.5) };
+            SwitchOuter.Background = new RadialGradientBrush(Color.FromRgb(226, 229, 240), Color.FromRgb(244, 245, 251)) { RadiusX = 0.9, RadiusY = 0.9, GradientOrigin = new System.Windows.Point(0.5, 0.5) };
             SwitchCore.Background = new SolidColorBrush(Color.FromRgb(255, 255, 255));
             SwitchCore.BorderBrush = new SolidColorBrush(Color.FromRgb(227, 230, 240));
             PowerText.Foreground = new SolidColorBrush(Color.FromRgb(154, 160, 184));
@@ -235,7 +235,7 @@ public partial class SwitchWindow : Window
     // ---------- 卸载 ----------
     private void UninstallBtn_Click(object sender, RoutedEventArgs e)
     {
-        var ask = MessageBox.Show(this, "确定要卸载吗？\n将停止服务并删除全部程序文件。", "卸载 DeepSeek Harness",
+        var ask = System.Windows.MessageBox.Show(this, "确定要卸载吗？\n将停止服务并删除全部程序文件。", "卸载 DeepSeek Harness",
             MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (ask != MessageBoxResult.Yes) return;
 

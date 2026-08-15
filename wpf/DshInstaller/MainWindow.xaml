@@ -101,18 +101,20 @@
             </Grid>
 
             <!-- 底部按钮条 -->
-            <Grid Grid.Row="2" Background="#FFFFFF" BorderBrush="{StaticResource DividerBrush}"
-                  BorderThickness="0,1,0,0" Padding="26,14,26,18">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Button x:Name="BtnBack" Grid.Column="0" Content="← 上一步"
-                        Style="{StaticResource SecondaryButton}" Click="BtnBack_Click" />
-                <Button x:Name="BtnNext" Grid.Column="2" Content="下一步 →"
-                        Style="{StaticResource PrimaryButton}" Click="BtnNext_Click" />
-            </Grid>
+            <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="{StaticResource DividerBrush}"
+                    BorderThickness="0,1,0,0" Padding="26,14,26,18">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="BtnBack" Grid.Column="0" Content="← 上一步"
+                            Style="{StaticResource SecondaryButton}" Click="BtnBack_Click" />
+                    <Button x:Name="BtnNext" Grid.Column="2" Content="下一步 →"
+                            Style="{StaticResource PrimaryButton}" Click="BtnNext_Click" />
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </Window>
