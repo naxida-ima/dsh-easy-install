@@ -67,12 +67,17 @@ jobs:
           "exe exists: $(Test-Path $exe)" | Out-File $out -Append
           if (-not (Test-Path $exe)) { Get-Content $out; throw "installer exe missing" }
           & $exe --selftest
-          "installer exit code: $LASTEXITCODE" | Out-File $out -Append
+          "installer exit code (call): $LASTEXITCODE" | Out-File $out -Append
+          $p = Start-Process -FilePath $exe -ArgumentList '--selftest' -Wait -PassThru
+          "installer exit code (Start-Process): $($p.ExitCode)" | Out-File $out -Append
+          $sig = Get-AuthenticodeSignature $exe
+          "signature: $($sig.Status)" | Out-File $out -Append
+          try { $md = Get-MpThreatDetection | Select-Object -First 2; "mp threats: $($md.Count)" | Out-File $out -Append } catch { "mp query fail" | Out-File $out -Append }
           $sl = Join-Path $env:LOCALAPPDATA 'DeepSeekHarness\logs\selftest.log'
           "selftest.log exists: $(Test-Path $sl)" | Out-File $out -Append
           if (Test-Path $sl) { Get-Content $sl | Out-File $out -Append }
           Get-Content $out
-          if ($LASTEXITCODE -ne 0) { throw "INSTALLER SELFTEST FAILED (exit $LASTEXITCODE)" }
+          if ($p.ExitCode -ne 0) { throw "INSTALLER SELFTEST FAILED (exit $($p.ExitCode))" }
         shell: pwsh
 
       - name: Upload smoke output via API (always)
