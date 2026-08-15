@@ -71,6 +71,20 @@ jobs:
           Write-Host "==> installer selftest PASS"
         shell: pwsh
 
+      - name: Commit selftest log (on failure)
+        if: failure()
+        run: |
+          $log = Join-Path $env:LOCALAPPDATA 'DeepSeekHarness\logs\selftest.log'
+          if (Test-Path $log) {
+            Copy-Item $log 'selftest.log' -Force
+            git config user.email "ci@naxida.local"
+            git config user.name "CI Build"
+            git add -f selftest.log
+            git commit -m "ci: selftest log (run ${{ github.run_id }})" || true
+            git push origin main || true
+          }
+        shell: pwsh
+
       - name: Smoke test switch (service start/stop)
         run: |
           $pkg = 'build\package\DeepSeek-Harness-Installer'
