@@ -75,14 +75,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "INSTALLER SELFTEST FAILED (exit $LASTEXITCODE)" }
         shell: pwsh
 
-      - name: Commit smoke output (always)
+      - name: Upload smoke output via API (always)
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.email "ci@naxida.local"
-          git config user.name "CI Build"
-          git add -f smoke-out.txt selftest.log switch-selftest.log
-          git commit -m "ci: smoke output (run ${{ github.run_id }})" || true
-          git push origin main || true
+          if (Test-Path smoke-out.txt) {
+            $content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((Get-Content smoke-out.txt -Raw)))
+            $body = @{ message = "ci: smoke output (run ${{ github.run_id }})"; content = $content } | ConvertTo-Json
+            Invoke-RestMethod -Method Put -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/contents/smoke-${{ github.run_id }}.txt" `
+              -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; "User-Agent" = "ci" } -Body $body | Out-Null
+            Write-Host "smoke output uploaded"
+          }
         shell: pwsh
 
       - name: Smoke test switch (service start/stop)
