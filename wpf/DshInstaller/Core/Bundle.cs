@@ -85,7 +85,19 @@ public static class Bundle
                 continue;
             }
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            entry.ExtractToFile(target, overwrite: true);
+            // 防御性重试：杀软/系统索引可能短暂锁定文件
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    entry.ExtractToFile(target, overwrite: true);
+                    break;
+                }
+                catch (IOException) when (attempt < 8)
+                {
+                    System.Threading.Thread.Sleep(700 + attempt * 300);
+                }
+            }
             done += entry.Length;
             progress?.Invoke(done, Math.Max(total, 1), phase);
         }

@@ -66,10 +66,8 @@ jobs:
           "exe: $exe" | Out-File $out -Append
           "exe exists: $(Test-Path $exe)" | Out-File $out -Append
           if (-not (Test-Path $exe)) { Get-Content $out; throw "installer exe missing" }
-          & $exe --selftest
-          "installer exit code (call): $LASTEXITCODE" | Out-File $out -Append
           $p = Start-Process -FilePath $exe -ArgumentList '--selftest' -Wait -PassThru
-          "installer exit code (Start-Process): $($p.ExitCode)" | Out-File $out -Append
+          "installer exit code: $($p.ExitCode)" | Out-File $out -Append
           $sig = Get-AuthenticodeSignature $exe
           "signature: $($sig.Status)" | Out-File $out -Append
           try { $md = Get-MpThreatDetection | Select-Object -First 2; "mp threats: $($md.Count)" | Out-File $out -Append } catch { "mp query fail" | Out-File $out -Append }
@@ -85,12 +83,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if (Test-Path smoke-out.txt) {
-            $content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((Get-Content smoke-out.txt -Raw)))
-            $body = @{ message = "ci: smoke output (run ${{ github.run_id }})"; content = $content } | ConvertTo-Json
-            Invoke-RestMethod -Method Put -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/contents/smoke-${{ github.run_id }}.txt" `
-              -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; "User-Agent" = "ci" } -Body $body | Out-Null
-            Write-Host "smoke output uploaded"
+          foreach ($f in @('smoke-out.txt', 'smoke-out-switch.txt')) {
+            if (Test-Path $f) {
+              $content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((Get-Content $f -Raw)))
+              $body = @{ message = "ci: smoke output (run ${{ github.run_id }})"; content = $content } | ConvertTo-Json
+              Invoke-RestMethod -Method Put -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/contents/smoke-${{ github.run_id }}-$($f.Replace('smoke-out-','').Replace('.txt','')).txt" `
+                -Headers @{ Authorization = "Bearer $env:GH_TOKEN"; "User-Agent" = "ci" } -Body $body | Out-Null
+              Write-Host "$f uploaded"
+            }
           }
         shell: pwsh
 
@@ -98,12 +98,16 @@ jobs:
         run: |
           $pkg = 'build\package\DeepSeek-Harness-Installer'
           $sw = Join-Path $pkg 'switch\switch.exe'
-          if (-not (Test-Path $sw)) { throw "switch exe missing: $sw" }
-          & $sw --selftest
-          $code = $LASTEXITCODE
+          $out2 = 'smoke-out-switch.txt'
+          "== switch smoke ==" | Out-File $out2
+          "switch exe exists: $(Test-Path $sw)" | Out-File $out2 -Append
+          if (-not (Test-Path $sw)) { Get-Content $out2; throw "switch exe missing" }
+          $sp = Start-Process -FilePath $sw -ArgumentList '--selftest' -Wait -PassThru
+          "switch exit code: $($sp.ExitCode)" | Out-File $out2 -Append
           $log = Join-Path $env:LOCALAPPDATA 'DeepSeekHarness\logs\switch-selftest.log'
-          if (Test-Path $log) { Get-Content $log }
-          if ($code -ne 0) { throw "SWITCH SELFTEST FAILED (exit $code)" }
+          if (Test-Path $log) { Get-Content $log | Out-File $out2 -Append }
+          Get-Content $out2
+          if ($sp.ExitCode -ne 0) { throw "SWITCH SELFTEST FAILED (exit $($sp.ExitCode))" }
           Write-Host "==> switch selftest PASS"
         shell: pwsh
 
