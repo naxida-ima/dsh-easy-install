@@ -163,6 +163,12 @@ public partial class MainWindow : Window
                 PageHost.Content = _installPage;
                 BtnNext.Content = "下一步 →";
                 BtnNext.IsEnabled = false;
+                // 重新进入本页但已安装过 → 直接可进完成页
+                if (_installPage.InstallSucceeded)
+                {
+                    BtnNext.Content = "完成 →";
+                    BtnNext.IsEnabled = true;
+                }
                 break;
             case 4:
                 PageHost.Content = new DonePage();
@@ -187,7 +193,10 @@ public partial class MainWindow : Window
                 ShowStep(_step + 1);
                 break;
             case 3:
-                _installPage?.StartInstall();
+                if (_installPage is { InstallSucceeded: true })
+                    ShowStep(4);          // 安装成功：进入完成页
+                else
+                    _installPage?.StartInstall();
                 break;
             case 4:
                 Close();
