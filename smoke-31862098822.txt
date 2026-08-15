@@ -1,0 +1,33 @@
+== smoke test start ==
+exe: build\package\DeepSeek-Harness-Installer\安装DeepSeekHarness.exe
+exe exists: True
+installer exit code (call): 
+installer exit code (Start-Process): 0
+signature: NotSigned
+mp threats: 0
+selftest.log exists: True
+[03:39:02] == selftest start ==
+[03:39:02] install_root: C:\Users\runneradmin\AppData\Local\DeepSeekHarness
+[03:39:02] bundle_dir: D:\a\dsh-easy-install\dsh-easy-install\build\package\DeepSeek-Harness-Installer\_assets
+[03:39:02] node.zip: True
+[03:39:02] dsh.zip: True
+[03:39:02] verify OK
+[03:39:03] SELFTEST EXCEPTION: System.IO.IOException: The process cannot access the file 'C:\Users\runneradmin\AppData\Local\DeepSeekHarness\runtime\node\CHANGELOG.md' because it is being used by another process.
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileStreamOptions options)
+   at System.IO.Compression.ZipFileExtensions.ExtractToFile(ZipArchiveEntry source, String destinationFileName, Boolean overwrite)
+   at DshInstaller.Core.Bundle.ExtractZip(String zipPath, String dest, Action`3 progress, String phase) in D:\a\dsh-easy-install\dsh-easy-install\wpf\DshInstaller\Core\Bundle.cs:line 88
+   at DshInstaller.Core.Installer.InstallAll(Action`3 progress) in D:\a\dsh-easy-install\dsh-easy-install\wpf\DshInstaller\Core\Installer.cs:line 124
+   at DshInstaller.Core.SelfTest.Run() in D:\a\dsh-easy-install\dsh-easy-install\wpf\DshInstaller\Core\SelfTest.cs:line 38
+[03:39:48] install OK
+[03:39:48] node.exe: True
+[03:39:48] dsh entry: True
+[03:39:48] switch.exe: True
+[03:39:48] install.json: True
+[03:39:51] start OK, port_open=True
+[03:39:52] stop: ok=True msg=服务已停止
+[03:39:53] port after stop: False
+[03:39:53] SELFTEST PASS
