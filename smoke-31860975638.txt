@@ -1,0 +1,8 @@
+== smoke test start ==
+exe: build\package\DeepSeek-Harness-Installer\安装DeepSeekHarness.exe
+exe exists: True
+installer exit code (call): 
+installer exit code (Start-Process): -532462766
+signature: NotSigned
+mp threats: 0
+selftest.log exists: False
