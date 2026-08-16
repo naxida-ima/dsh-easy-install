@@ -1,0 +1,22 @@
+== smoke test start ==
+exe: build\package\DeepSeek-Harness-Installer\安装DeepSeekHarness.exe
+exe exists: True
+installer exit code: 0
+signature: NotSigned
+mp threats: 0
+selftest.log exists: True
+[09:42:30] == selftest start ==
+[09:42:30] install_root: C:\Users\runneradmin\AppData\Local\DeepSeekHarness
+[09:42:30] bundle_dir: D:\a\dsh-easy-install\dsh-easy-install\build\package\DeepSeek-Harness-Installer\_assets
+[09:42:30] node.zip: True
+[09:42:30] dsh.zip: True
+[09:42:30] verify OK
+[09:43:12] install OK
+[09:43:12] node.exe: True
+[09:43:12] dsh entry: True
+[09:43:12] switch.exe: True
+[09:43:12] install.json: True
+[09:43:15] start OK, port_open=True
+[09:43:17] stop: ok=True msg=服务已停止
+[09:43:17] port after stop: False
+[09:43:17] SELFTEST PASS
