@@ -192,8 +192,12 @@ public static class Detector
     {
         var list = new List<CheckItem>();
 
-        // 1 位数
-        if (Environment.Is64BitOperatingSystem)
+        // 1 位数 / 架构
+        var osArch = RuntimeInformation.OSArchitecture;
+        if (osArch == Architecture.Arm64)
+            list.Add(CheckItem.Warn("arch", "系统架构", "检测到 ARM64 处理器",
+                "本安装包内置的是 x64 版本程序：Windows 11 ARM64 可通过系统模拟运行（性能略有下降）；Windows 10 ARM64 不支持 x64 模拟，无法使用。", 1));
+        else if (Environment.Is64BitOperatingSystem)
             list.Add(CheckItem.Ok("arch", "系统位数", "64 位系统 ✓",
                 "安装包需要 64 位 Windows，您的电脑符合要求。", 1));
         else
