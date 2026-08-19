@@ -144,21 +144,21 @@ else
     echo "[*] 从香港镜像下载: dsh-$DSH_VER.tgz ..."
     if curl -fsSL -m 120 -o "$TMP_TGZ" "$MIRROR/dsh/npm/dsh-$DSH_VER.tgz"; then
         echo "[*] 下载完成 ($(du -h "$TMP_TGZ" | cut -f1))，npm 安装中（含依赖，需几分钟）..."
-        if npm install -g "$TMP_TGZ" > /tmp/dsh-npm-install.log 2>&1; then
+        if npm install -g "$TMP_TGZ" > $HOME/dsh-npm-install.log 2>&1; then
             echo "[✔] npm 安装成功"
         else
             echo "[!] npm 安装失败，错误日志（尾部 30 行）："
-            tail -30 /tmp/dsh-npm-install.log
+            tail -30 $HOME/dsh-npm-install.log
             echo "[!] 若为 node-gyp 编译错误（node-pty/sharp/koffi 等原生模块），说明 dsh 原生依赖与 Termux 不兼容"
         fi
         rm -f "$TMP_TGZ"
     else
         echo "[!] 镜像下载失败，改用 npm 官方源"
-        if npm install -g @deepseek-ai/dsh > /tmp/dsh-npm-install.log 2>&1; then
+        if npm install -g @deepseek-ai/dsh > $HOME/dsh-npm-install.log 2>&1; then
             echo "[✔] npm 安装成功"
         else
             echo "[!] npm 安装失败，错误日志（尾部 30 行）："
-            tail -30 /tmp/dsh-npm-install.log
+            tail -30 $HOME/dsh-npm-install.log
         fi
     fi
 fi
@@ -174,7 +174,7 @@ elif [ -x "$PREFIX/bin/dsh" ]; then
     echo "        export PATH=\"\$PATH:\$PREFIX/bin\""
 else
     echo "[!] dsh 命令未找到，可能原因与对策："
-    echo "    1) npm 安装失败（上面有日志）→ 查看 /tmp/dsh-npm-install.log"
+    echo "    1) npm 安装失败（上面有日志）→ 查看 $HOME/dsh-npm-install.log"
     echo "    2) 原生依赖与 Termux 不兼容 → 推荐用 proot 装完整 Linux 运行 dsh："
     echo "       proot-distro install ubuntu"
     echo "       proot-distro login ubuntu"
