@@ -1,0 +1,30 @@
+name: dsh-mirror-sync
+
+# DeepSeek Harness 国内镜像自动同步
+# 定时（每 6 小时）调用美国服务器上的同步脚本，自动拉取官方最新资源
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 触发服务器同步脚本
+        run: |
+          code=$(curl -s -o /tmp/dsh_sync_out.txt -w '%{http_code}' -m 590 \
+            "http://hgtg2.naxida-zjt.top/api/dsh-sync.php?token=${{ secrets.DSH_MIRROR_TOKEN }}")
+          echo "HTTP 状态: $code"
+          cat /tmp/dsh_sync_out.txt
+          if [ "$code" != "200" ]; then
+            echo "::error::同步失败 HTTP $code"
+            exit 1
+          fi
+          if ! grep -q "DONE" /tmp/dsh_sync_out.txt; then
+            echo "::error::同步脚本未正常完成"
+            exit 1
+          fi
+      - name: 失败通知（输出到 Actions 日志）
+        if: failure()
+        run: echo "dsh 镜像同步失败，请检查服务器状态或脚本日志"
