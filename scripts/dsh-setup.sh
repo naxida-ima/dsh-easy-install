@@ -25,12 +25,37 @@ if ! command -v pkg >/dev/null 2>&1; then
     exit 1
 fi
 
-# ---------- 工具函数：修复 dpkg 中断状态 ----------
+# ---------- 工具函数：修复 dpkg 中断状态（激进版） ----------
 fix_dpkg() {
-    echo "[*] 检测到 dpkg 异常，尝试自动修复..."
+    echo "[*] 激进修复 dpkg..."
+    # 1. 清锁文件与中断的更新状态
+    rm -f "$PREFIX"/var/lib/dpkg/lock* 2>/dev/null
+    rm -rf "$PREFIX"/var/lib/dpkg/updates/* 2>/dev/null
+    # 2. 重新配置所有未配置的包
     dpkg --configure -a 2>&1 | tail -3
+    # 3. 若 apt 包自身卡住，冻结它跳过（apt 升级不重要）
+    apt-mark hold apt 2>/dev/null
+    dpkg --configure -a 2>&1 | tail -3
+    # 4. 修复破损依赖
     apt --fix-broken install -y 2>&1 | tail -3
-    apt --fix-broken install -y >/dev/null 2>&1 && echo "[✔] dpkg 修复完成" || echo "[!] 修复未完全成功，继续尝试"
+    echo "[*] dpkg 修复流程结束"
+}
+
+# ---------- 安装函数：逐个安装，失败跳过 ----------
+install_pkgs() {
+    local failed=""
+    for p in "$@"; do
+        printf '  - %-18s' "$p"
+        if pkg install -y "$p" >/dev/null 2>&1; then
+            echo "[✔]"
+        else
+            echo "[✘] 失败，跳过"
+            failed="$failed $p"
+        fi
+    done
+    if [ -n "$failed" ]; then
+        echo "[!] 以下包安装失败（已跳过，不影响后续）: $failed"
+    fi
 }
 
 # ---------- 0.5 启动预检：dpkg 状态 ----------
@@ -56,23 +81,19 @@ termux-setup-storage >/dev/null 2>&1 || echo "[*] 稍后可手动执行 termux-s
 
 # ---------- 3. 安装刚需工具 ----------
 echo ""
-echo "[3/6] 安装刚需工具 (git/curl/python/php/clang...)..."
-if ! pkg install -y \
+echo "[3/6] 安装刚需工具 (逐个安装，失败自动跳过)..."
+install_pkgs \
     curl wget git vim nano tree zip unzip tar \
     htop tmux openssh rsync jq \
     python php make clang pkg-config \
-    openssl-tool bash-completion termux-api proot-distro \
-    >/dev/null 2>&1; then
-    echo "[!] 工具安装失败，修复 dpkg 后重试..."
-    fix_dpkg
-    pkg install -y curl wget git vim nano zip unzip tar openssh 2>&1 | tail -3
-fi
+    openssl-tool bash-completion termux-api proot-distro
 echo "[*] 工具安装完成"
 
 # ---------- 4. 安装 Node.js ----------
 echo ""
 echo "[4/6] 安装 Node.js (nodejs-lts)..."
 if ! command -v node >/dev/null 2>&1; then
+    echo "[*] 安装 nodejs-lts ..."
     pkg install -y nodejs-lts >/dev/null 2>&1 || { echo "[!] nodejs 安装失败，修复后重试"; fix_dpkg; pkg install -y nodejs-lts >/dev/null 2>&1 || { echo "[!] nodejs 仍未安装成功"; exit 1; }; }
 fi
 NODE_VER=$(node -v 2>/dev/null | sed 's/^v//')
