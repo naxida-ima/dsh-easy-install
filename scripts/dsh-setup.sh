@@ -95,7 +95,8 @@ install_pkgs \
     curl wget git vim nano tree zip unzip tar \
     htop tmux openssh rsync jq \
     python php make clang pkg-config \
-    openssl-tool bash-completion termux-api proot-distro
+    openssl-tool bash-completion termux-api proot-distro \
+    cmake ninja libvips libjpeg-turbo libpng
 echo "[*] 工具安装完成"
 
 # ---------- 4. 安装 Node.js ----------
@@ -174,13 +175,15 @@ elif [ -x "$PREFIX/bin/dsh" ]; then
     echo "        export PATH=\"\$PATH:\$PREFIX/bin\""
 else
     echo "[!] dsh 命令未找到，可能原因与对策："
-    echo "    1) npm 安装失败（上面有日志）→ 查看 $HOME/dsh-npm-install.log"
-    echo "    2) 原生依赖与 Termux 不兼容 → 推荐用 proot 装完整 Linux 运行 dsh："
+    echo "    1) npm 安装失败（上面有日志）→ 查看 \$HOME/dsh-npm-install.log"
+    echo "    2) 原生模块编译失败（koffi 需 CMake / node-pty 需 make+clang / sharp 需 libvips）"
+    echo "       → 脚本已自动安装 cmake/ninja/libvips 等编译依赖，重跑即可"
+    echo "       pkg install -y cmake ninja libvips libjpeg-turbo libpng"
+    echo "    3) 仍不兼容 → 用 proot 装完整 Linux 运行 dsh："
     echo "       proot-distro install ubuntu"
     echo "       proot-distro login ubuntu"
     echo "       # 在 Ubuntu 里：apt update && apt install -y nodejs npm"
     echo "       # npm install -g @deepseek-ai/dsh && dsh web"
-    echo "    3) 缺编译依赖 → pkg install -y libvips libjpeg-turbo libpng"
 fi
 
 echo ""
