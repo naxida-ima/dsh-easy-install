@@ -1,0 +1,31 @@
+name: hk-mirror-sync
+
+# DeepSeek Harness 香港镜像自动同步
+# 定时（每 6 小时，与美国镜像错开 30 分钟）调用香港服务器同步脚本
+# 内容：dsh 全量 + Node.js linux-arm64 + Termux 刚需工具
+on:
+  schedule:
+    - cron: '47 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 触发香港服务器同步脚本
+        run: |
+          code=$(curl -s -o /tmp/hk_sync_out.txt -w '%{http_code}' -m 590 \
+            "http://dsh.xn--rhyr4ib67a.top/hk-sync.php?token=${{ secrets.DSH_MIRROR_TOKEN }}&mod=all")
+          echo "HTTP 状态: $code"
+          tail -20 /tmp/hk_sync_out.txt
+          if [ "$code" != "200" ]; then
+            echo "::error::香港同步失败 HTTP $code"
+            exit 1
+          fi
+          if ! grep -q "DONE" /tmp/hk_sync_out.txt; then
+            echo "::error::香港同步脚本未正常完成"
+            exit 1
+          fi
+      - name: 失败通知（输出到 Actions 日志）
+        if: failure()
+        run: echo "香港 dsh 镜像同步失败，请检查服务器状态"
