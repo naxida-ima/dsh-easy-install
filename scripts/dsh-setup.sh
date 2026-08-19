@@ -25,11 +25,29 @@ if ! command -v pkg >/dev/null 2>&1; then
     exit 1
 fi
 
+# ---------- 工具函数：修复 dpkg 中断状态 ----------
+fix_dpkg() {
+    echo "[*] 检测到 dpkg 异常，尝试自动修复..."
+    dpkg --configure -a 2>&1 | tail -3
+    apt --fix-broken install -y 2>&1 | tail -3
+    apt --fix-broken install -y >/dev/null 2>&1 && echo "[✔] dpkg 修复完成" || echo "[!] 修复未完全成功，继续尝试"
+}
+
+# ---------- 0.5 启动预检：dpkg 状态 ----------
+if dpkg --audit 2>/dev/null | grep -q .; then
+    echo "[*] 发现未完成的 dpkg 任务，先修复..."
+    fix_dpkg
+fi
+
 # ---------- 1. 更新源 ----------
 echo ""
 echo "[1/6] 更新软件源..."
-pkg update -y || { echo "[!] pkg update 失败，检查网络后重试"; exit 1; }
-pkg upgrade -y || echo "[*] pkg upgrade 部分失败，继续"
+pkg update -y || { echo "[!] pkg update 失败，尝试修复后重试"; fix_dpkg; pkg update -y || { echo "[!] 仍然失败，请检查网络"; exit 1; }; }
+if ! pkg upgrade -y; then
+    echo "[*] pkg upgrade 失败，自动修复中..."
+    fix_dpkg
+    pkg upgrade -y || echo "[*] upgrade 仍有问题，继续安装（后面会再次校验）"
+fi
 
 # ---------- 2. 授权存储 ----------
 echo ""
@@ -39,22 +57,23 @@ termux-setup-storage >/dev/null 2>&1 || echo "[*] 稍后可手动执行 termux-s
 # ---------- 3. 安装刚需工具 ----------
 echo ""
 echo "[3/6] 安装刚需工具 (git/curl/python/php/clang...)..."
-pkg install -y \
+if ! pkg install -y \
     curl wget git vim nano tree zip unzip tar \
     htop tmux openssh rsync jq \
     python php make clang pkg-config \
     openssl-tool bash-completion termux-api proot-distro \
-    >/dev/null 2>&1 || {
-        echo "[!] 部分工具安装失败，逐个重试..."
-        pkg install -y curl wget git vim nano zip unzip tar openssh 2>&1 | tail -3
-    }
+    >/dev/null 2>&1; then
+    echo "[!] 工具安装失败，修复 dpkg 后重试..."
+    fix_dpkg
+    pkg install -y curl wget git vim nano zip unzip tar openssh 2>&1 | tail -3
+fi
 echo "[*] 工具安装完成"
 
 # ---------- 4. 安装 Node.js ----------
 echo ""
 echo "[4/6] 安装 Node.js (nodejs-lts)..."
 if ! command -v node >/dev/null 2>&1; then
-    pkg install -y nodejs-lts >/dev/null 2>&1 || { echo "[!] nodejs 安装失败"; exit 1; }
+    pkg install -y nodejs-lts >/dev/null 2>&1 || { echo "[!] nodejs 安装失败，修复后重试"; fix_dpkg; pkg install -y nodejs-lts >/dev/null 2>&1 || { echo "[!] nodejs 仍未安装成功"; exit 1; }; }
 fi
 NODE_VER=$(node -v 2>/dev/null | sed 's/^v//')
 echo "[*] Node.js 版本: v${NODE_VER:-未知}"
