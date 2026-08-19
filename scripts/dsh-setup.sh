@@ -164,6 +164,19 @@ else
     fi
 fi
 
+# ---------- 5.5 Termux/Android 特殊处理：sharp 装 wasm 运行时 ----------
+# sharp 无 android-arm64 原生二进制，官方方案是使用 WebAssembly 版本
+if [ -n "${TERMUX_VERSION:-}" ] || [ "$(uname -o 2>/dev/null)" = "Android" ]; then
+    echo ""
+    echo "[5.5] 检测到 Termux，为 sharp 安装 wasm 运行时（否则 dsh web 无法启动）..."
+    if [ -d "$PREFIX/lib/node_modules/@deepseek-ai/dsh" ]; then
+        (cd "$PREFIX/lib/node_modules/@deepseek-ai/dsh" && \
+         npm install --cpu=wasm32 sharp --registry="$NPM_REGISTRY" >> "$HOME/dsh-npm-install.log" 2>&1 \
+         && echo "[✔] sharp wasm 安装成功" \
+         || echo "[!] sharp wasm 安装失败，可稍后手动执行: cd $PREFIX/lib/node_modules/@deepseek-ai/dsh && npm install --cpu=wasm32 sharp")
+    fi
+fi
+
 # ---------- 6. 验证与说明 ----------
 echo ""
 echo "[6/6] 验证安装..."
