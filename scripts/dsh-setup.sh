@@ -148,6 +148,10 @@ echo ""
 echo "[6/6] 验证安装..."
 if command -v dsh >/dev/null 2>&1; then
     echo "[✔] dsh 安装成功: $(dsh --version 2>/dev/null || echo v?.?.?)"
+elif [ -x "$PREFIX/bin/dsh" ]; then
+    echo "[✔] dsh 已安装到 $PREFIX/bin/dsh"
+    echo "    [*] 但 PATH 中未找到，执行以下命令后可正常使用:"
+    echo "        export PATH=\"\$PATH:\$PREFIX/bin\""
 else
     echo "[!] dsh 命令未找到。若上方有编译错误，可能缺少原生依赖，尝试:"
     echo "    pkg install -y libvips libjpeg-turbo libpng nodejs-lts"
