@@ -25,18 +25,22 @@ if ! command -v pkg >/dev/null 2>&1; then
     exit 1
 fi
 
-# ---------- 工具函数：修复 dpkg 中断状态（激进版） ----------
+# ---------- 工具函数：修复 dpkg 中断状态（激进版 v2） ----------
 fix_dpkg() {
-    echo "[*] 激进修复 dpkg..."
+    echo "[*] 激进修复 dpkg（自动应答 conffile 冲突）..."
+    # 0. 非交互模式 + 全局自动应答（写 apt 配置，后续 pkg upgrade 也不弹提示）
+    export DEBIAN_FRONTEND=noninteractive
+    printf 'Dpkg::Options {\n  "--force-confold";\n};\nAPT::Get::Assume-Yes "true";\n' \
+        > "$PREFIX/etc/apt/apt.conf.d/99dsh-noninteractive" 2>/dev/null
     # 1. 清锁文件与中断的更新状态
     rm -f "$PREFIX"/var/lib/dpkg/lock* 2>/dev/null
     rm -rf "$PREFIX"/var/lib/dpkg/updates/* 2>/dev/null
-    # 2. 重新配置所有未配置的包
-    dpkg --configure -a 2>&1 | tail -3
-    # 3. 若 apt 包自身卡住，冻结它跳过（apt 升级不重要）
+    # 2. 重新配置所有未配置的包（--force-confold 自动应答，不弹交互）
+    dpkg --force-confold --configure -a 2>&1 | tail -3
+    # 3. 若 apt 包自身仍卡住，冻结它跳过（apt 升级不重要）
     apt-mark hold apt 2>/dev/null
-    dpkg --configure -a 2>&1 | tail -3
-    # 4. 修复破损依赖
+    dpkg --force-confold --configure -a 2>&1 | tail -3
+    # 4. 修复破损依赖（同样自动应答）
     apt --fix-broken install -y 2>&1 | tail -3
     echo "[*] dpkg 修复流程结束"
 }
@@ -57,6 +61,11 @@ install_pkgs() {
         echo "[!] 以下包安装失败（已跳过，不影响后续）: $failed"
     fi
 }
+
+# ---------- 0.4 预写 apt 自动应答配置（防止 conffile 交互卡死） ----------
+export DEBIAN_FRONTEND=noninteractive
+printf 'Dpkg::Options {\n  "--force-confold";\n};\nAPT::Get::Assume-Yes "true";\n' \
+    > "$PREFIX/etc/apt/apt.conf.d/99dsh-noninteractive" 2>/dev/null
 
 # ---------- 0.5 启动预检：dpkg 状态 ----------
 if dpkg --audit 2>/dev/null | grep -q .; then
