@@ -192,6 +192,8 @@ wrap_dsh() {
     ln -s "$PKG_BIN" "$PREFIX/bin/dsh.orig"
     cat > "$PREFIX/bin/dsh" <<EOF
 #!/bin/bash
+# dsh 包装：Termux 需 --expose-internals（HMR）+ 沙箱降级（Android 无 Landlock）
+export DSH_PERMISSION_MODE="\${DSH_PERMISSION_MODE:-danger-full-access}"
 PREFIX="\$(dirname "\$(dirname "\$(readlink -f "\$0")")")"
 exec node --expose-internals "\$PREFIX/bin/dsh.orig" "\$@"
 EOF
@@ -266,6 +268,43 @@ if [ -f "$HOME/.dsh/settings.yaml" ]; then
     chmod 600 "$HOME/.dsh/settings.yaml" 2>/dev/null
 fi
 
+# ---------- 5.9 修复 grep/glob 工具（@vscode/ripgrep 平台子包） ----------
+# dsh 的 grep 工具用 @vscode/ripgrep 预编译二进制，按 os.platform() 解析平台子包；
+# Termux 的 Node 报告 android-arm64，VSCode 未发布该变体 → 解析失败。
+# 修复：装系统 rg + 补装 android-arm64 子包（bin/rg → 系统 rg 符号链接）
+fix_ripgrep() {
+    if ! command -v rg >/dev/null 2>&1; then
+        echo "[*] 安装 ripgrep ..."
+        pkg install -y ripgrep >/dev/null 2>&1 || echo "[!] ripgrep 安装失败（不影响 dsh 本体）"
+    fi
+    local RG_DIR
+    for d in \
+        "$PREFIX/lib/node_modules/@deepseek-ai/dsh/node_modules/@vscode/ripgrep-android-arm64" \
+        "$PREFIX/lib/node_modules/@vscode/ripgrep-android-arm64"; do
+        if [ -d "$d" ]; then RG_DIR="$d"; break; fi
+    done
+    if [ -z "$RG_DIR" ]; then
+        # 创建平台子包目录
+        RG_DIR="$PREFIX/lib/node_modules/@deepseek-ai/dsh/node_modules/@vscode/ripgrep-android-arm64"
+        mkdir -p "$RG_DIR/bin"
+        cat > "$RG_DIR/package.json" <<'EOF'
+{
+  "name": "@vscode/ripgrep-android-arm64",
+  "version": "1.18.0",
+  "description": "Termux android-arm64 ripgrep platform subpackage",
+  "os": ["android"],
+  "cpu": ["arm64"],
+  "bin": { "rg": "bin/rg" }
+}
+EOF
+        ln -sf "$PREFIX/bin/rg" "$RG_DIR/bin/rg"
+        echo "[✔] 已补装 @vscode/ripgrep-android-arm64 子包（grep/glob 工具可用）"
+    else
+        echo "[✔] ripgrep 平台子包已存在"
+    fi
+}
+fix_ripgrep
+
 # ---------- 6. 验证与说明 ----------
 echo ""
 echo "[6/6] 验证安装..."
@@ -296,6 +335,9 @@ echo "  1. 启动 Web UI:   dsh web"
 echo "                     浏览器打开 http://127.0.0.1:3080"
 echo "  2. 首次使用:      在 Web UI 中填入 DeepSeek API Key"
 echo "  --------------------------------------------"
+echo "  说明: dsh 已自动附带 --expose-internals 和"
+echo "        DSH_PERMISSION_MODE=danger-full-access"
+echo "        （Termux 无 Landlock 沙箱，官方降级路径）"
 echo "  更新 dsh:         重新运行本脚本 (自动取镜像最新版)"
 echo "  更新工具:         pkg upgrade"
 echo "  npm 加速:         registry = $NPM_REGISTRY"
