@@ -258,6 +258,14 @@ PY
 }
 apply_link_patch
 
+# ---------- 5.8 校正 .dsh 权限（dsh 安全校验要求凭据文件 600） ----------
+if [ -f "$HOME/.dsh/.credentials.yaml" ]; then
+    chmod 600 "$HOME/.dsh/.credentials.yaml" 2>/dev/null
+fi
+if [ -f "$HOME/.dsh/settings.yaml" ]; then
+    chmod 600 "$HOME/.dsh/settings.yaml" 2>/dev/null
+fi
+
 # ---------- 6. 验证与说明 ----------
 echo ""
 echo "[6/6] 验证安装..."
