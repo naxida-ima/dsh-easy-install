@@ -208,6 +208,56 @@ EOF
     chmod +x "$PREFIX/bin/dshx"
 fi
 
+# ---------- 5.7 应用会话持久化硬链接补丁（Android 禁止 hardlink） ----------
+# dsh 写会话日志用 link() 原子替换，Android/Termux 禁止硬链接 → EACCES 崩溃
+# 补丁：link 失败时降级为 rename（效果等价，仅少一点原子性保证）
+apply_link_patch() {
+    local SP_DIR=""
+    for d in \
+        "$PREFIX/lib/node_modules/@deepseek-ai/dsh-session-persistence-jsonl" \
+        "$PREFIX/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-session-persistence-jsonl"; do
+        if [ -f "$d/lib/index.js" ]; then SP_DIR="$d"; break; fi
+    done
+    [ -z "$SP_DIR" ] && SP_DIR=$(find "$PREFIX/lib/node_modules" -maxdepth 4 -type d -name "dsh-session-persistence-jsonl" 2>/dev/null | head -1)
+    if [ -z "$SP_DIR" ] || [ ! -f "$SP_DIR/lib/index.js" ]; then
+        echo "[!] 未找到 session-persistence 插件，跳过补丁"
+        return
+    fi
+    local TARGET="$SP_DIR/lib/index.js"
+    if grep -q "fall back to rename" "$TARGET" 2>/dev/null; then
+        echo "[✔] 硬链接补丁已应用"
+        return
+    fi
+    python3 - "$TARGET" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+if "rename," not in s.split("from \"node:fs/promises\"")[0]:
+    s = s.replace("import { link,", "import { link, rename,", 1)
+old = """await link(tmp, finalPath);
+\t\t\tlinked = true;
+\t\t} finally {"""
+new = """await link(tmp, finalPath);
+\t\t\tlinked = true;
+\t\t} catch {
+\t\t\t/* Android/Termux forbids hardlinks: fall back to rename */
+\t\t\ttry { await rename(tmp, finalPath); linked = true; } catch {}
+\t\t} finally {"""
+if old in s:
+    s = s.replace(old, new, 1)
+else:
+    import re
+    pat = re.compile(r"await link\(tmp, finalPath\);\s*linked = true;\s*\} finally \{")
+    s, n = pat.subn(new, s, count=1)
+    if n == 0:
+        print("[!] 未能匹配 link 代码段（dsh 版本可能已变化）")
+        sys.exit(1)
+open(p, "w", encoding="utf-8").write(s)
+print("[✔] 硬链接补丁应用成功")
+PY
+}
+apply_link_patch
+
 # ---------- 6. 验证与说明 ----------
 echo ""
 echo "[6/6] 验证安装..."
