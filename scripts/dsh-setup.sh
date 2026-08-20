@@ -177,17 +177,31 @@ if [ -n "${TERMUX_VERSION:-}" ] || [ "$(uname -o 2>/dev/null)" = "Android" ]; th
     fi
 fi
 
-# ---------- 5.6 生成 dshx 启动包装命令（Termux 需要 --expose-internals） ----------
-# dsh web 的 HMR 插件要求 node --expose-internals，但该标志不允许放 NODE_OPTIONS，
-# 只能通过 node 命令行直接传入，故生成包装命令 dshx
-if [ -x "$PREFIX/bin/dsh" ]; then
+# ---------- 5.6 包装 dsh 命令（Termux 需要 --expose-internals） ----------
+# HMR 插件要求 node --expose-internals，但该标志不允许放 NODE_OPTIONS，
+# 只能通过 node 命令行传入 → 用包装脚本替换 dsh 命令，dsh web 直接可用
+wrap_dsh() {
+    if [ -e "$PREFIX/bin/dsh" ] && [ ! -e "$PREFIX/bin/dsh.orig" ]; then
+        mv "$PREFIX/bin/dsh" "$PREFIX/bin/dsh.orig"
+    fi
+    if [ -e "$PREFIX/bin/dsh.orig" ]; then
+        cat > "$PREFIX/bin/dsh" <<EOF
+#!/bin/bash
+PREFIX="\$(dirname "\$(dirname "\$(readlink -f "\$0")")")"
+exec node --expose-internals "\$PREFIX/bin/dsh.orig" "\$@"
+EOF
+        chmod +x "$PREFIX/bin/dsh"
+        echo "[✔] dsh 已包装（自动附带 --expose-internals，dsh web 直接可用）"
+    fi
+}
+wrap_dsh
+# 兼容旧版：保留 dshx 快捷命令
+if [ -x "$PREFIX/bin/dsh" ] && [ ! -e "$PREFIX/bin/dshx" ]; then
     cat > "$PREFIX/bin/dshx" <<EOF
 #!/bin/bash
-# dsh 启动包装：自动附加 --expose-internals（HMR 需要）
-exec node --expose-internals "$PREFIX/bin/dsh" "\$@"
+exec "$PREFIX/bin/dsh" "\$@"
 EOF
     chmod +x "$PREFIX/bin/dshx"
-    echo "[✔] 已创建启动命令 dshx（用法: dshx web）"
 fi
 
 # ---------- 6. 验证与说明 ----------
@@ -216,7 +230,7 @@ echo ""
 echo "=============================================="
 echo "  安装完成！使用指南："
 echo "  --------------------------------------------"
-echo "  1. 启动 Web UI:   dshx web"
+echo "  1. 启动 Web UI:   dsh web"
 echo "                     浏览器打开 http://127.0.0.1:3080"
 echo "  2. 首次使用:      在 Web UI 中填入 DeepSeek API Key"
 echo "  --------------------------------------------"
