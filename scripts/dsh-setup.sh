@@ -180,19 +180,23 @@ fi
 # ---------- 5.6 包装 dsh 命令（Termux 需要 --expose-internals） ----------
 # HMR 插件要求 node --expose-internals，但该标志不允许放 NODE_OPTIONS，
 # 只能通过 node 命令行传入 → 用包装脚本替换 dsh 命令，dsh web 直接可用
+# 注意：dsh.orig 必须是指向 npm bin.js 的符号链接，重复执行本函数也会干净重建
 wrap_dsh() {
-    if [ -e "$PREFIX/bin/dsh" ] && [ ! -e "$PREFIX/bin/dsh.orig" ]; then
-        mv "$PREFIX/bin/dsh" "$PREFIX/bin/dsh.orig"
+    local PKG_BIN="$PREFIX/lib/node_modules/@deepseek-ai/dsh/lib/bin.js"
+    if [ ! -f "$PKG_BIN" ]; then
+        echo "[!] 未找到 dsh 入口 $PKG_BIN，跳过包装"
+        return
     fi
-    if [ -e "$PREFIX/bin/dsh.orig" ]; then
-        cat > "$PREFIX/bin/dsh" <<EOF
+    # 干净重建：删掉旧的 dsh 与 dsh.orig（可能是被污染的脚本），重建 symlink + 包装
+    rm -f "$PREFIX/bin/dsh" "$PREFIX/bin/dsh.orig"
+    ln -s "$PKG_BIN" "$PREFIX/bin/dsh.orig"
+    cat > "$PREFIX/bin/dsh" <<EOF
 #!/bin/bash
 PREFIX="\$(dirname "\$(dirname "\$(readlink -f "\$0")")")"
 exec node --expose-internals "\$PREFIX/bin/dsh.orig" "\$@"
 EOF
-        chmod +x "$PREFIX/bin/dsh"
-        echo "[✔] dsh 已包装（自动附带 --expose-internals，dsh web 直接可用）"
-    fi
+    chmod +x "$PREFIX/bin/dsh"
+    echo "[✔] dsh 已包装（自动附带 --expose-internals，dsh web 直接可用）"
 }
 wrap_dsh
 # 兼容旧版：保留 dshx 快捷命令
